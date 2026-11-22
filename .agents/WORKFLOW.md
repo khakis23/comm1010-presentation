@@ -9,7 +9,7 @@
 ## Connect audience phones
 
 1. In a Firebase project, register a Web app, enable Anonymous Authentication, and create a Realtime Database in locked mode.
-2. Publish [database.rules.json](../database.rules.json) contents from the database's Rules tab or run `firebase deploy --only database --project YOUR_PROJECT_ID` using the Firebase CLI from this directory.
+2. Publish [database.rules.json](../database.rules.json) contents from the database's Rules tab or run `firebase deploy --only database --project YOUR_PROJECT_ID` using the Firebase CLI from this directory. GitHub Pages publishes the three web pages. The Firebase rules are deployed separately. Reload the presenter after publishing the rules.
 3. Copy [.env.example](../.env.example) to `.env.local` and set `VITE_FIREBASE_CONFIG` to the Web app's JSON configuration, including `databaseURL`. Use another browser profile or phone for voting and verify its submission reaches the presenter. Copy the private clicker link from the presenter HUD to the Pixel and test both directions. Open a fresh link after reloading the presenter. The presenter's browser owns the generated room.
 4. To use the Firebase project on GitHub Pages, set repository Actions variable `VITE_FIREBASE_CONFIG` to that same JSON and rerun the Pages workflow. Open the deployed presenter when projecting its QR, and keep the original presenter browser profile for the duration of the presentation.
 

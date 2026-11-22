@@ -31,4 +31,5 @@ The HUD pairs the clicker using a per-page random key in the URL fragment and th
 - The presenter writes station index and title to `rooms/{room}/control/{key}`. An authenticated clicker can subscribe to that exact key.
 - The clicker appends commands to `rooms/{room}/commands/{key}`. The rules require a live pairing and a short expiry. Only the room owner can read and clear the queue.
 - The presenter handles commands as they arrive and clears consumed entries. Firebase removes the published station and command queue when the presenter disconnects.
+- The presenter checks that Firebase denies listing the control and command collections before it publishes a pairing.
 - Same-browser clickers with a live local presenter use transient BroadcastChannel messages. Storage events provide the same behavior when BroadcastChannel is unavailable. The physical keyboard drives the camera directly.

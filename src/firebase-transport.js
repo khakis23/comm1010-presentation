@@ -3,7 +3,7 @@ import {
   browserLocalPersistence, connectAuthEmulator, initializeAuth, signInAnonymously,
 } from '@firebase/auth';
 import {
-  connectDatabaseEmulator, getDatabase, onChildAdded, onDisconnect, onValue, push, ref,
+  connectDatabaseEmulator, get, getDatabase, onChildAdded, onDisconnect, onValue, push, ref,
   remove, runTransaction, set,
 } from '@firebase/database';
 import { INITIAL_ROUND, validBallot } from './ballots.js';
@@ -36,7 +36,7 @@ export function createFirebaseTransport(config, { room, role, controlKey, onChan
   let signingIn;
   let localStation;
   let station;
-  let controlError = false;
+  let controlError;
   let controlReady = false;
   let controlConnection;
   let unwatchCommands;
@@ -50,10 +50,9 @@ export function createFirebaseTransport(config, { room, role, controlKey, onChan
     else if (connected && metadata === null && !presenter) status = 'waiting';
     else if (connected && (clicker ? Boolean(metadata) : observed)) status = 'ready';
 
-    const controlStatus = controlError ? 'error'
-      : status !== 'ready' ? status
+    const controlStatus = controlError ?? (status !== 'ready' ? status
       : (presenter ? controlReady : Boolean(station)) ? 'ready'
-      : 'waiting';
+      : 'waiting');
     onChange({ round, ballots, receipt, status, station, controlStatus });
   }
 
@@ -71,19 +70,37 @@ export function createFirebaseTransport(config, { room, role, controlKey, onChan
   }
 
   function failControl() {
-    controlError = true;
+    controlError = 'error';
     publish();
+  }
+
+  async function collectionIsPrivate(collection) {
+    try {
+      await get(collection);
+      return false;
+    } catch (error) {
+      if (/permission[ _]denied/i.test(error.message)) return true;
+      throw error;
+    }
   }
 
   function armControl() {
     if (!presenter || !connected || metadata?.owner !== user.uid || !localStation || controlConnection) return;
     const connection = {};
     controlConnection = connection;
-    onDisconnect(ref(db, base)).update({
-      [`control/${controlKey}`]: null,
-      [`commands/${controlKey}`]: null,
-    }).then(async () => {
+    Promise.all([stageRef.parent, commandsRef.parent].map(collectionIsPrivate)).then(async (permissions) => {
       if (controlConnection !== connection) return;
+      if (permissions.includes(false)) {
+        controlError = 'rules';
+        publish();
+        return;
+      }
+      await onDisconnect(ref(db, base)).update({
+        [`control/${controlKey}`]: null,
+        [`commands/${controlKey}`]: null,
+      });
+      if (controlConnection !== connection) return;
+      controlError = undefined;
       controlReady = true;
       watchCommands();
       await set(stageRef, localStation);

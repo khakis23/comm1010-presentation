@@ -128,6 +128,7 @@ board.subscribe((state) => {
     ready: 'Remote clicker available.',
     error: 'Firebase clicker unavailable.',
     offline: 'Firebase clicker disconnected.',
+    rules: 'Remote clicker paused. Publish the Firebase database rules and reload the presenter.',
   };
   get('control-connection').dataset.status = state.controlStatus ?? state.status;
   text('control-connection', controlMessages[state.controlStatus] ?? '');
