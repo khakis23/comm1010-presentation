@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Submit Your Actions · COMM 1010</title>
+    <link rel="stylesheet" href="/src/styles.css">
+    <script type="module" src="/src/voter.js"></script>
+  </head>
+  <body class="voter">
+    <main id="voting">
+      <h1 tabindex="-1">Log your actions</h1>
+      <noscript><p>Enable JavaScript to calculate and submit your score.</p></noscript>
+      <p id="vote-connection" role="status"></p>
+
+      <form id="vote-form">
+        <fieldset class="stepper" data-action="locked">
+          <legend>Apps locked behind Face ID or Secure Folder (+1 point each)</legend>
+          <div class="stepper-controls">
+            <button type="button" data-step="-1" aria-label="Remove a locked app" aria-describedby="count-locked" disabled>−</button>
+            <span id="count-locked" class="stepper-value" data-count>0</span>
+            <button type="button" data-step="1" aria-label="Add a locked app" aria-describedby="count-locked" disabled>+</button>
+          </div>
+        </fieldset>
+
+        <fieldset class="stepper" data-action="fasted">
+          <legend>Apps deleted for a 7-day fast (+3 points each)</legend>
+          <div class="stepper-controls">
+            <button type="button" data-step="-1" aria-label="Remove an app from the 7-day fast" aria-describedby="count-fasted" disabled>−</button>
+            <span id="count-fasted" class="stepper-value" data-count>0</span>
+            <button type="button" data-step="1" aria-label="Add an app to the 7-day fast" aria-describedby="count-fasted" disabled>+</button>
+          </div>
+        </fieldset>
+
+        <fieldset class="stepper" data-action="deleted">
+          <legend>Accounts permanently deleted (+7 points each)</legend>
+          <div class="stepper-controls">
+            <button type="button" data-step="-1" aria-label="Remove a deleted account" aria-describedby="count-deleted" disabled>−</button>
+            <span id="count-deleted" class="stepper-value" data-count>0</span>
+            <button type="button" data-step="1" aria-label="Add a deleted account" aria-describedby="count-deleted" disabled>+</button>
+          </div>
+        </fieldset>
+
+        <p><output id="voter-score">Your Score: 0 Points</output></p>
+        <button id="vote-submit" type="submit" disabled>SUBMIT POINTS TO THE BOARD</button>
+        <p id="vote-feedback" role="status"></p>
+      </form>
+
+      <section id="vote-confirmation" aria-labelledby="confirmation-heading" hidden>
+        <h2 id="confirmation-heading" tabindex="-1">Points submitted</h2>
+        <p id="confirmation-score"></p>
+      </section>
+    </main>
+  </body>
+</html>

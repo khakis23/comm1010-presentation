@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Reclaiming Digital Agency · COMM 1010</title>
+    <link rel="stylesheet" href="/src/styles.css">
+    <script type="module" src="/src/presenter.js"></script>
+  </head>
+  <body class="presenter">
+    <header class="presenter-header">
+      <p>COMM 1010 · Reclaiming Digital Agency</p>
+      <p id="board-connection" aria-live="polite"></p>
+    </header>
+
+    <noscript><p>Enable JavaScript to navigate the slides, display the voting QR code, and update the board.</p></noscript>
+
+    <main id="presentation" aria-label="Presentation slides">
+      <section id="slide-1" class="slide" aria-labelledby="slide-1-heading">
+        <h1 id="slide-1-heading" tabindex="-1">Attention and cognitive impact</h1>
+        <p>Opening hook placeholder</p>
+      </section>
+
+      <section id="slide-2" class="slide" aria-labelledby="slide-2-heading" hidden>
+        <h1 id="slide-2-heading" tabindex="-1">Memory experiment</h1>
+        <ul>
+          <li>YouTube comparison placeholder</li>
+          <li>Short-form comparison placeholder</li>
+        </ul>
+      </section>
+
+      <section id="slide-3" class="slide" aria-labelledby="slide-3-heading" hidden>
+        <h1 id="slide-3-heading" tabindex="-1">The 11-year glass rectangle</h1>
+        <p>Statistic and source placeholder</p>
+      </section>
+
+      <section id="slide-4" class="slide" aria-labelledby="slide-4-heading" hidden>
+        <h1 id="slide-4-heading" tabindex="-1">Before and after</h1>
+        <p>Real-world story placeholders</p>
+      </section>
+
+      <section id="slide-5" class="slide" aria-labelledby="slide-5-heading" hidden>
+        <h1 id="slide-5-heading" tabindex="-1">Take action</h1>
+        <ul>
+          <li>Lock an app behind Face ID or Secure Folder for 1 point.</li>
+          <li>Delete an app for a 7-day fast for 3 points.</li>
+          <li>Permanently delete an account for 7 points.</li>
+        </ul>
+        <canvas id="vote-qr" role="img" aria-label="QR code for the voting page" hidden></canvas>
+        <p><a id="vote-link" href="./vote.html">Open the voting page</a></p>
+        <p id="qr-status" role="status"></p>
+      </section>
+
+      <section id="slide-6" class="slide" aria-labelledby="slide-6-heading" hidden>
+        <h1 id="slide-6-heading" tabindex="-1">Classroom goal</h1>
+        <dl id="board-totals">
+          <dt>Goal</dt>
+          <dd id="board-goal">20 points</dd>
+          <dt>Total points</dt>
+          <dd id="board-points">0</dd>
+          <dt>Voters</dt>
+          <dd id="board-voters">0</dd>
+        </dl>
+        <p id="goal-achieved" hidden>Goal Achieved</p>
+        <p id="board-simulated" hidden></p>
+        <p id="board-announcement" class="visually-hidden" role="status"></p>
+        <h2>Action breakdown</h2>
+        <dl id="board-breakdown">
+          <dt>Apps locked</dt>
+          <dd id="board-locked">0 actions · 0 points</dd>
+          <dt>Apps deleted for a 7-day fast</dt>
+          <dd id="board-fasted">0 actions · 0 points</dd>
+          <dt>Accounts permanently deleted</dt>
+          <dd id="board-deleted">0 actions · 0 points</dd>
+        </dl>
+      </section>
+    </main>
+
+    <footer class="presenter-footer">
+      <nav class="presenter-controls" aria-label="Presentation controls">
+        <button id="slide-previous" type="button" aria-keyshortcuts="ArrowLeft" disabled>Previous</button>
+        <button id="slide-next" type="button" aria-keyshortcuts="ArrowRight Space" disabled>Next</button>
+        <button id="slide-fullscreen" type="button" aria-keyshortcuts="F" aria-pressed="false" disabled>Fullscreen</button>
+        <button id="board-simulate" type="button" aria-keyshortcuts="S" disabled>Simulate votes</button>
+        <button id="board-reset" type="button" aria-keyshortcuts="R" disabled>Reset votes</button>
+      </nav>
+      <p><label><input id="single-key-shortcuts" type="checkbox" checked> Enable F, S and R shortcuts</label></p>
+      <div class="presentation-progress">
+        <p id="slide-position">Slide 1 of 6</p>
+        <progress id="slide-progress" max="6" value="1" aria-label="Presentation progress"></progress>
+      </div>
+      <p id="presenter-status" role="status"></p>
+    </footer>
+  </body>
+</html>

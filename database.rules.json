@@ -1,0 +1,35 @@
+{
+  "rules": {
+    "rooms": {
+      "$room": {
+        "meta": {
+          ".read": "auth !== null",
+          ".write": "auth !== null && !data.exists() && newData.exists() && $room.matches(/^[a-zA-Z0-9_-]{1,80}$/) && newData.child('owner').val() === auth.uid",
+          ".validate": "newData.hasChildren(['owner', 'round'])",
+          "owner": {
+            ".validate": "newData.isString() && newData.val() === auth.uid"
+          },
+          "round": {
+            ".write": "auth !== null && newData.exists() && data.parent().child('owner').val() === auth.uid",
+            ".validate": "newData.isString() && newData.val().matches(/^[a-zA-Z0-9_-]{1,80}$/)"
+          },
+          "$other": { ".validate": false }
+        },
+        "votes": {
+          "$round": {
+            ".read": "auth !== null && root.child('rooms').child($room).child('meta').child('owner').val() === auth.uid",
+            "$uid": {
+              ".read": "auth !== null && auth.uid === $uid",
+              ".write": "auth !== null && auth.uid === $uid && !data.exists() && newData.exists() && root.child('rooms').child($room).child('meta').child('round').val() === $round",
+              ".validate": "newData.hasChildren(['locked', 'fasted', 'deleted']) && newData.child('locked').val() + newData.child('fasted').val() + newData.child('deleted').val() > 0",
+              "locked": { ".validate": "newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 10" },
+              "fasted": { ".validate": "newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 10" },
+              "deleted": { ".validate": "newData.isNumber() && newData.val() % 1 === 0 && newData.val() >= 0 && newData.val() <= 10" },
+              "$other": { ".validate": false }
+            }
+          }
+        }
+      }
+    }
+  }
+}
