@@ -1,5 +1,6 @@
 import { INITIAL_ROUND, simulationBallot, tally, validBallot } from './ballots.js';
 import { createJournal, randomId, rememberRoom, withBrowserLock } from './journal.js';
+import { COMMAND_LIFETIME, validCommand, validStation } from './presenter-control.js';
 
 const firebaseConfig = import.meta.env?.VITE_FIREBASE_CONFIG?.trim();
 const useEmulators = import.meta.env?.DEV && import.meta.env?.VITE_FIREBASE_EMULATORS === '1';
@@ -12,18 +13,63 @@ function withDeadline(operation) {
   return Promise.race([operation, deadline]).finally(() => clearTimeout(timer));
 }
 
-export function createSync({ presenter = false } = {}) {
-  const requestedRoom = new URL(location.href).searchParams.get('room');
+export function createSync({ role = 'voter' } = {}) {
+  const presenter = role === 'presenter';
+  const clicker = role === 'clicker';
+  const url = new URL(location.href);
+  const requestedRoom = url.searchParams.get('room');
   const validRoom = requestedRoom && /^[a-zA-Z0-9_-]{1,80}$/.test(requestedRoom) ? requestedRoom : null;
   const remote = Boolean(firebaseConfig);
-  const room = validRoom ?? (remote ? (presenter ? rememberRoom() : null) : 'classroom');
+  const room = validRoom ?? (clicker ? null : remote ? (presenter ? rememberRoom() : null) : 'classroom');
+  const requestedKey = new URLSearchParams(url.hash.slice(1)).get('control');
+  const controlKey = presenter ? randomId() : clicker && /^[a-f0-9]{32}$/.test(requestedKey) ? requestedKey : null;
   const namespace = `${remote ? 'remote' : 'local'}:${room}`;
   const subscribers = new Set();
+  const commandListeners = new Set();
   const journal = createJournal(namespace, publish);
   let source = { status: remote ? (room ? 'connecting' : 'missing-room') : 'local' };
   let transport;
   let resetInFlight;
   let resetFailed = false;
+  let station;
+  let localStation;
+  let localSeenAt;
+  const control = room && controlKey
+    ? createJournal(`control:${namespace}:${controlKey}`, () => {}, receiveLocal)
+    : null;
+
+  function dispatch(command) {
+    if (!validCommand(command)) return;
+    for (const listener of commandListeners) listener(command);
+  }
+
+  function receiveLocal(message) {
+    if (presenter && message.type === 'probe' && station) {
+      control.send({ type: 'station', station });
+    } else if (presenter && message.type === 'command' && message.expiresAt > Date.now()) {
+      dispatch(message.command);
+    } else if (clicker && message.type === 'station' && validStation(message.station)) {
+      localStation = message.station;
+      localSeenAt = performance.now();
+      publish();
+    }
+  }
+
+  function localPresenterAvailable() {
+    return localStation && performance.now() - localSeenAt < 9000;
+  }
+
+  if (clicker && control) {
+    const probe = () => {
+      control.send({ type: 'probe' });
+      if (localStation && !localPresenterAvailable()) {
+        localStation = undefined;
+        publish();
+      }
+    };
+    probe();
+    setInterval(probe, 3000);
+  }
 
   function currentRound(refresh = false) {
     const read = refresh ? journal.refresh : journal.read;
@@ -47,6 +93,8 @@ export function createSync({ presenter = false } = {}) {
       status: source.status,
       pendingReset: Boolean(journal.read('pending-reset')),
       resetFailed,
+      station: (localPresenterAvailable() ? localStation : source.station) ?? null,
+      controlStatus: localPresenterAvailable() ? 'local' : source.controlStatus,
     };
   }
 
@@ -75,7 +123,7 @@ export function createSync({ presenter = false } = {}) {
   function receive(update) {
     const wasReady = source.status === 'ready';
     source = update;
-    if (update.round) {
+    if (update.round && !clicker) {
       if (presenter && update.ballots !== null) journal.write(`remote-board:${update.round}`, update.ballots);
       journal.write('round', update.round);
     }
@@ -90,24 +138,49 @@ export function createSync({ presenter = false } = {}) {
         throw new Error('Firebase API key, database URL, and project ID are required');
       }
       const { createFirebaseTransport } = await import('./firebase-transport.js');
-      transport = createFirebaseTransport(config, { room, presenter, onChange: receive, useEmulators });
+      transport = createFirebaseTransport(config, {
+        room, role, controlKey, onChange: receive, onCommand: dispatch, useEmulators,
+      });
+      if (station) transport.setStation(station);
     } catch {
       receive({ status: 'error' });
     }
   }
 
-  if (remote && room) void connect();
+  if (remote && room && (!clicker || controlKey)) void connect();
 
   return {
     room,
+    controlKey,
     snapshot,
     subscribe(listener) {
       subscribers.add(listener);
       listener(snapshot());
       return () => subscribers.delete(listener);
     },
+    setStation(next) {
+      if (!presenter || !validStation(next)) return;
+      station = next;
+      control.send({ type: 'station', station });
+      transport?.setStation(station);
+    },
+    onCommand(listener) {
+      if (presenter) commandListeners.add(listener);
+      return () => commandListeners.delete(listener);
+    },
+    async sendCommand(command) {
+      if (!clicker || !control || !validCommand(command)) throw new Error('Invalid presenter command');
+      if (localPresenterAvailable()) {
+        control.send({ type: 'command', command, expiresAt: Date.now() + COMMAND_LIFETIME });
+        return;
+      }
+      if (!transport || source.status !== 'ready' || source.controlStatus !== 'ready') {
+        throw new Error('Presenter unavailable');
+      }
+      return withDeadline(transport.sendCommand(command));
+    },
     async submit(expectedRound, ballot) {
-      if (presenter || !validBallot(ballot)) throw new Error('Invalid ballot');
+      if (role !== 'voter' || !validBallot(ballot)) throw new Error('Invalid ballot');
       if (remote) {
         if (!transport || source.status !== 'ready') throw new Error('Board unavailable');
         return withDeadline(transport.submit(expectedRound, ballot));

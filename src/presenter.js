@@ -1,33 +1,21 @@
 import { ACTIONS, ACTION_NAMES, GOAL, SIMULATION_STEPS, SIMULATION_TARGET } from './ballots.js';
 import { drawVoteQr } from './qr.js';
+import { createSpatialCamera } from './spatial-camera.js';
 import { createSync } from './sync.js';
 
 const get = (id) => document.getElementById(id);
-const deck = get('presentation');
-const slides = Array.from(deck.querySelectorAll('.slide'));
-const previous = get('slide-previous');
-const next = get('slide-next');
-const fullscreen = get('slide-fullscreen');
+const viewport = get('stage-viewport');
+const fullscreen = get('stage-fullscreen');
 const simulate = get('board-simulate');
 const reset = get('board-reset');
 const shortcuts = get('single-key-shortcuts');
-const progress = get('slide-progress');
 const status = get('presenter-status');
-const board = createSync({ presenter: true });
-let active = 0;
+const board = createSync({ role: 'presenter' });
+const camera = createSpatialCamera(viewport, (station) => {
+  text('station-position', `Station ${station.index} / 5`);
+  board.setStation(station);
+});
 let simulation;
-let swipe;
-progress.max = slides.length;
-
-function showSlide(index, focus = true) {
-  active = Math.max(0, Math.min(index, slides.length - 1));
-  slides.forEach((slide, position) => { slide.hidden = position !== active; });
-  get('slide-position').textContent = `Slide ${active + 1} of ${slides.length}`;
-  progress.value = active + 1;
-  previous.disabled = active === 0;
-  next.disabled = active === slides.length - 1;
-  if (focus) slides[active].querySelector('h1').focus();
-}
 
 async function toggleFullscreen() {
   try {
@@ -57,7 +45,7 @@ function startSimulation() {
 
   const run = { round, index: 0, timer: undefined };
   simulation = run;
-  if (document.activeElement === simulate) slides[active].querySelector('h1').focus();
+  if (document.activeElement === simulate) camera.focus();
   simulate.disabled = true;
   status.textContent = 'Simulating audience votes.';
 
@@ -115,6 +103,8 @@ board.subscribe((state) => {
   text('board-goal', `${GOAL} points`);
   text('board-points', state.points);
   text('board-voters', state.voters);
+  get('board-progress').value = Math.min(state.points, GOAL);
+  get('action-hub').dataset.goal = goalAchieved ? 'achieved' : 'pending';
   get('goal-achieved').hidden = !goalAchieved;
   get('board-simulated').hidden = state.simulated === 0;
   text('board-simulated', `Simulated votes included: ${state.simulated}`);
@@ -131,7 +121,16 @@ board.subscribe((state) => {
       ? 'The live reset could not be confirmed. Reset again to retry.'
       : 'Board cleared here. Waiting to reset the live room.';
   }
+  get('board-connection').dataset.status = state.status;
   text('board-connection', connection);
+
+  const controlMessages = {
+    ready: 'Remote clicker available.',
+    error: 'Firebase clicker unavailable.',
+    offline: 'Firebase clicker disconnected.',
+  };
+  get('control-connection').dataset.status = state.controlStatus ?? state.status;
+  text('control-connection', controlMessages[state.controlStatus] ?? '');
 });
 
 const voteUrl = new URL('./vote.html', location.href);
@@ -143,8 +142,29 @@ try {
   get('qr-status').textContent = 'QR code unavailable. Use the voting link.';
 }
 
-previous.addEventListener('click', () => showSlide(active - 1));
-next.addEventListener('click', () => showSlide(active + 1));
+const clickerUrl = new URL('./clicker.html', location.href);
+clickerUrl.searchParams.set('room', board.room);
+clickerUrl.hash = new URLSearchParams({ control: board.controlKey }).toString();
+get('clicker-link').href = clickerUrl.href;
+get('copy-clicker-link').disabled = false;
+get('copy-clicker-link').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(clickerUrl.href);
+    status.textContent = 'Clicker link copied.';
+  } catch {
+    status.textContent = 'Use the presenter clicker link to open or copy the address.';
+  }
+});
+
+board.onCommand((command) => {
+  switch (command) {
+    case 'prev': camera.prev(); break;
+    case 'next': camera.next(); break;
+    case 'simulate': startSimulation(); break;
+    case 'reset': resetBoard(); break;
+  }
+});
+
 fullscreen.addEventListener('click', toggleFullscreen);
 simulate.addEventListener('click', startSimulation);
 reset.addEventListener('click', resetBoard);
@@ -167,14 +187,14 @@ document.addEventListener('keydown', (event) => {
   switch (event.code) {
     case 'ArrowLeft':
       event.preventDefault();
-      if (active > 0) showSlide(active - 1);
+      camera.prev();
       break;
     case 'Space':
       if (target?.closest(interactive)) break;
       // Space and Right Arrow both advance.
     case 'ArrowRight':
       event.preventDefault();
-      if (active < slides.length - 1) showSlide(active + 1);
+      camera.next();
       break;
     case 'KeyF':
       if (shortcuts.checked && !event.repeat) void toggleFullscreen();
@@ -188,24 +208,39 @@ document.addEventListener('keydown', (event) => {
   }
 });
 
-deck.addEventListener('pointerdown', (event) => {
-  if (event.pointerType !== 'touch' || !event.isPrimary || event.target.closest(interactive)) return;
-  swipe = { id: event.pointerId, x: event.clientX, y: event.clientY };
-  deck.setPointerCapture(event.pointerId);
+const memory = get('memory-experiment');
+const memoryButton = get('memory-decay');
+const memoryCards = Array.from(memory.querySelectorAll('[data-memory-card]'));
+memoryButton.addEventListener('click', () => {
+  const decayed = memory.dataset.state === 'baseline';
+  memory.dataset.state = decayed ? 'decayed' : 'baseline';
+  memoryButton.setAttribute('aria-pressed', String(decayed));
+  for (const card of memoryCards) card.hidden = decayed && card.hasAttribute('data-decays');
+  const recalled = memoryCards.filter((card) => !card.hidden).length;
+  text('memory-result', `${recalled} of ${memoryCards.length} example items recalled.`);
 });
-deck.addEventListener('pointerup', (event) => {
-  if (swipe?.id !== event.pointerId) return;
-  const dx = event.clientX - swipe.x;
-  const dy = event.clientY - swipe.y;
-  swipe = undefined;
-  if (Math.abs(dx) >= 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-    const index = active + (dx < 0 ? 1 : -1);
-    if (index >= 0 && index < slides.length) showSlide(index);
-  }
-});
-deck.addEventListener('lostpointercapture', () => { swipe = undefined; });
 
-fullscreen.disabled = false;
-simulate.disabled = false;
-reset.disabled = false;
-showSlide(0, false);
+const lifespan = get('lifespan-hours');
+function renderLifespan() {
+  const hours = lifespan.valueAsNumber;
+  const years = hours * 80 / 16;
+  const format = (number) => number.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const hoursLabel = `${format(hours)} hours per day`;
+  lifespan.setAttribute('aria-valuetext', hoursLabel);
+  get('lifespan-result').value = `${hoursLabel} · ${format(years)} conscious years`;
+}
+lifespan.addEventListener('input', renderLifespan);
+renderLifespan();
+
+const friction = get('friction-protocol');
+const frictionButton = get('friction-toggle');
+frictionButton.addEventListener('click', () => {
+  const shielded = friction.dataset.state === 'default';
+  friction.dataset.state = shielded ? 'shielded' : 'default';
+  frictionButton.setAttribute('aria-pressed', String(shielded));
+  text('friction-state', shielded ? 'Biometric Shield active' : 'Default OS');
+});
+
+for (const control of [fullscreen, simulate, reset, memoryButton, lifespan, frictionButton]) {
+  control.disabled = false;
+}

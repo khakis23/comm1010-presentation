@@ -3,19 +3,25 @@ import {
   browserLocalPersistence, connectAuthEmulator, initializeAuth, signInAnonymously,
 } from '@firebase/auth';
 import {
-  connectDatabaseEmulator, getDatabase, onValue, ref, runTransaction,
+  connectDatabaseEmulator, getDatabase, onChildAdded, onDisconnect, onValue, push, ref,
+  remove, runTransaction, set,
 } from '@firebase/database';
 import { INITIAL_ROUND, validBallot } from './ballots.js';
 import { withBrowserLock } from './journal.js';
+import { COMMAND_LIFETIME, validCommand, validStation } from './presenter-control.js';
 
 const TX_OPTIONS = { applyLocally: false };
 
-export function createFirebaseTransport(config, { room, presenter, onChange, useEmulators }) {
+export function createFirebaseTransport(config, { room, role, controlKey, onChange, onCommand, useEmulators }) {
+  const presenter = role === 'presenter';
+  const clicker = role === 'clicker';
   const app = initializeApp(config);
   const db = getDatabase(app);
   if (useEmulators) connectDatabaseEmulator(db, '127.0.0.1', 19000);
   const base = `rooms/${room}`;
   const metaRef = ref(db, `${base}/meta`);
+  const stageRef = controlKey ? ref(db, `${base}/control/${controlKey}`) : null;
+  const commandsRef = controlKey ? ref(db, `${base}/commands/${controlKey}`) : null;
   let user;
   let connected = false;
   let everConnected = false;
@@ -28,15 +34,27 @@ export function createFirebaseTransport(config, { room, presenter, onChange, use
   let unwatchRound;
   let creating;
   let signingIn;
+  let localStation;
+  let station;
+  let controlError = false;
+  let controlReady = false;
+  let controlConnection;
+  let unwatchCommands;
+  let serverOffset = 0;
+  const consumed = new Map();
 
   function publish() {
     let status = 'connecting';
     if (error) status = 'error';
     else if (navigator.onLine === false || (!connected && everConnected)) status = 'offline';
     else if (connected && metadata === null && !presenter) status = 'waiting';
-    else if (connected && observed) status = 'ready';
+    else if (connected && (clicker ? Boolean(metadata) : observed)) status = 'ready';
 
-    onChange({ round, ballots, receipt, status });
+    const controlStatus = controlError ? 'error'
+      : status !== 'ready' ? status
+      : (presenter ? controlReady : Boolean(station)) ? 'ready'
+      : 'waiting';
+    onChange({ round, ballots, receipt, status, station, controlStatus });
   }
 
   function fail() {
@@ -52,11 +70,74 @@ export function createFirebaseTransport(config, { room, presenter, onChange, use
     } : undefined, TX_OPTIONS).catch(fail).finally(() => { creating = undefined; });
   }
 
+  function failControl() {
+    controlError = true;
+    publish();
+  }
+
+  function armControl() {
+    if (!presenter || !connected || metadata?.owner !== user.uid || !localStation || controlConnection) return;
+    const connection = {};
+    controlConnection = connection;
+    onDisconnect(ref(db, base)).update({
+      [`control/${controlKey}`]: null,
+      [`commands/${controlKey}`]: null,
+    }).then(async () => {
+      if (controlConnection !== connection) return;
+      controlReady = true;
+      watchCommands();
+      await set(stageRef, localStation);
+      if (controlConnection === connection) publish();
+    }).catch(() => {
+      if (controlConnection === connection) {
+        controlReady = false;
+        unwatchCommands?.();
+        failControl();
+      }
+    });
+  }
+
+  function observeControl() {
+    if (!controlKey) return;
+    onValue(ref(db, '.info/serverTimeOffset'), (snapshot) => {
+      serverOffset = snapshot.val() ?? 0;
+    });
+    if (clicker) {
+      onValue(stageRef, (snapshot) => {
+        station = validStation(snapshot.val()) ? snapshot.val() : null;
+        publish();
+      }, failControl);
+    }
+  }
+
+  function watchCommands() {
+    unwatchCommands = onChildAdded(commandsRef, (snapshot) => {
+      if (!controlReady) return;
+      const now = Date.now() + serverOffset;
+      for (const [key, expiration] of consumed) {
+        if (expiration <= now) consumed.delete(key);
+      }
+      const { command, expiresAt } = snapshot.val() ?? {};
+      if (validCommand(command) && expiresAt > now && !consumed.has(snapshot.key)) {
+        consumed.set(snapshot.key, expiresAt);
+        onCommand(command);
+      }
+      void remove(snapshot.ref).catch(failControl);
+    }, failControl);
+  }
+
   function observeRoom() {
     onValue(ref(db, '.info/connected'), (snapshot) => {
       connected = snapshot.val() === true;
-      if (connected) everConnected = true;
+      if (connected) {
+        everConnected = true;
+      } else {
+        controlReady = false;
+        controlConnection = undefined;
+        unwatchCommands?.();
+      }
       createRoom();
+      armControl();
       publish();
     });
 
@@ -73,7 +154,7 @@ export function createFirebaseTransport(config, { room, presenter, onChange, use
         observed = false;
         ballots = null;
         receipt = null;
-        if (round) {
+        if (round && !clicker) {
           const path = `${base}/votes/${round}${presenter ? '' : `/${user.uid}`}`;
           unwatchRound = onValue(ref(db, path), (result) => {
             if (presenter) ballots = Object.values(result.val() ?? {}).filter(validBallot);
@@ -84,8 +165,10 @@ export function createFirebaseTransport(config, { room, presenter, onChange, use
         }
       }
       createRoom();
+      armControl();
       publish();
     }, fail);
+    observeControl();
   }
 
   let auth;
@@ -123,6 +206,18 @@ export function createFirebaseTransport(config, { room, presenter, onChange, use
   connect();
 
   return {
+    setStation(next) {
+      if (!presenter || !validStation(next)) return;
+      localStation = next;
+      if (controlReady) void set(stageRef, next).catch(failControl);
+      else armControl();
+    },
+    async sendCommand(command) {
+      if (!clicker || !connected || !station || controlError || !validCommand(command)) {
+        throw new Error('Presenter unavailable');
+      }
+      await set(push(commandsRef), { command, expiresAt: Date.now() + serverOffset + COMMAND_LIFETIME });
+    },
     async submit(expectedRound, ballot) {
       if (!connected || !observed || round !== expectedRound) throw new Error('Round unavailable');
       const voteRef = ref(db, `${base}/votes/${round}/${user.uid}`);

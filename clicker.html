@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Presenter Clicker · COMM 1010</title>
+    <link rel="stylesheet" href="/src/styles.css">
+    <script type="module" src="/src/clicker.js"></script>
+  </head>
+  <body class="clicker">
+    <main id="clicker">
+      <header id="clicker-hud">
+        <h1>Presenter clicker</h1>
+        <p id="clicker-station" role="status">Waiting for the presenter…</p>
+        <p id="clicker-connection" role="status"></p>
+      </header>
+
+      <noscript><p>Enable JavaScript to connect to the presenter.</p></noscript>
+      <section id="speech-timer" aria-labelledby="speech-timer-heading" data-running="false">
+        <h2 id="speech-timer-heading">Speech timer</h2>
+        <p id="timer-elapsed" role="timer" aria-label="Elapsed speech time">00:00</p>
+        <p id="timer-target" role="status">Target 7–9 minutes</p>
+        <div class="clicker-utilities">
+          <button type="button" data-timer="start" disabled>Start</button>
+          <button type="button" data-timer="pause" disabled>Pause</button>
+          <button type="button" data-timer="reset" disabled>Reset timer</button>
+        </div>
+      </section>
+
+      <div id="clicker-navigation" role="group" aria-label="Station navigation">
+        <button id="clicker-prev" type="button" data-command="prev" aria-label="Prev station" disabled>Prev</button>
+        <button id="clicker-next" type="button" data-command="next" aria-label="Next station" disabled>Next</button>
+      </div>
+
+      <details id="clicker-board-controls">
+        <summary>Voting board controls</summary>
+        <div class="clicker-utilities">
+          <button id="clicker-simulate" type="button" data-command="simulate" disabled>Simulate votes (S)</button>
+          <button id="clicker-reset" type="button" data-command="reset" disabled>Reset board (R)</button>
+        </div>
+      </details>
+      <p id="clicker-feedback" role="status"></p>
+    </main>
+  </body>
+</html>

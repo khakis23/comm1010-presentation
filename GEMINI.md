@@ -1,7 +1,20 @@
 # Antigravity design handoff
 
-Own the visual treatment, type, palette, motion, imagery and narrative of the COMM 1010 presentation. The two pages are functional wireframes. Replace the placeholder slide content with the final speech material in `index.html`, and style the existing markup through `src/styles.css`. Use `vote.html` for the audience experience.
+Own the visual treatment, type, palette, motion, imagery and narrative of the COMM 1010 presentation. The presenter, audience voter, and phone clicker are functional wireframes.
 
-The slide order is the attention hook, memory experiment, 11-year statistic, before-and-after stories, audience call to action, and classroom goal reveal. Retain the existing slide IDs and headings, and update title copy as needed. Keep the QR code's full white margin visible on the projector and preserve the plain voting link. Keep button focus indicators, 44-pixel touch targets, visible labels, live feedback and support for reduced motion when adding animation. Preserve `hidden` behavior so that inactive slides and confirmation states stay out of the accessibility tree.
+## Presenter stage
 
-Read [.agents/ROLES.md](.agents/ROLES.md) for the division of labor, [.agents/ARCHITECTURE.md](.agents/ARCHITECTURE.md) for behavioral hooks, and [.agents/WORKFLOW.md](.agents/WORKFLOW.md) to run and rehearse the app.
+- `#stage-hud` contains the station indicator, voting and remote connection states, and the presenter pairing link. `#emergency-controls` holds fullscreen, simulation, and reset.
+- `#stage-viewport` provides perspective. `#stage-world` contains `#station-1` through `#station-5`, each marked with `data-station`. Style station interiors, leaving the world and station transforms under camera control. The active station has `data-active`. The other stations use `inert`.
+- `#flynn-effect` holds the cognitive metric. `#memory-experiment[data-state]` switches between `baseline` and `decayed`. Add `data-memory-card` to each example item and `data-decays` to the items hidden by the simulation.
+- `#lifespan-hours` and `#lifespan-result` form the attention calculator. `#friction-protocol[data-state]` switches between `default` and `shielded`.
+- `#action-hub[data-goal]` switches between `pending` and `achieved`. `#action-instructions` holds the QR and voting link. `#action-telemetry` holds the tally, goal progress, and action breakdown. Preserve the QR's full white margin and the plain voting link.
+
+Station headings are shared with the clicker. Keep the heading IDs, focus behavior, reduced-motion support, and live feedback. Keep the viewport and world transforms on their existing elements so all stations retain their relative positions.
+
+## Mobile routes
+
+- `clicker.html` uses `[data-command]` buttons and `#speech-timer`, with `data-running` and `data-target` for elapsed time state. `#clicker-navigation` offers two large tap zones. Keep them reachable and visually distinct.
+- `vote.html` uses `[data-action]` fieldsets and `[data-step]` buttons. Preserve visible labels, minimum touch sizes, focus visibility, and confirmation behavior.
+
+See [.agents/ROLES.md](.agents/ROLES.md), [.agents/ARCHITECTURE.md](.agents/ARCHITECTURE.md), and [.agents/WORKFLOW.md](.agents/WORKFLOW.md) for responsibilities, synchronization, and rehearsal.

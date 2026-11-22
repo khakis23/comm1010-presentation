@@ -23,14 +23,9 @@ button {
   outline-offset: 2px;
 }
 
-.slide {
-  min-block-size: 40vh;
-  touch-action: pan-y pinch-zoom;
-}
-
 .presenter-controls,
 .stepper-controls,
-.presentation-progress {
+.clicker-utilities {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -62,4 +57,113 @@ button {
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+.presenter,
+.clicker {
+  min-block-size: calc(100dvh - 2rem);
+}
+
+.presenter {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+#stage-hud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 1rem;
+}
+
+#stage-hud p,
+#clicker-hud p {
+  margin-block: 0.25rem;
+}
+
+#stage-viewport {
+  position: relative;
+  min-block-size: 55vh;
+  overflow: clip;
+}
+
+#stage-world {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition: transform 550ms ease-in-out;
+}
+
+#stage-world[data-resizing] {
+  transition: none;
+}
+
+#stage-world:not([data-ready]) .station:not([data-active]) {
+  visibility: hidden;
+}
+
+.station {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  backface-visibility: hidden;
+  padding-inline: 0.25rem;
+}
+
+.station[inert] {
+  pointer-events: none;
+}
+
+@media (min-width: 48rem) {
+  #action-hub {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+}
+
+#lifespan-hours {
+  display: block;
+  inline-size: min(100%, 32rem);
+  min-block-size: 44px;
+}
+
+#clicker {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-rows: auto auto minmax(10rem, 1fr) auto auto;
+  min-block-size: inherit;
+}
+
+#clicker h1,
+#clicker h2,
+#timer-elapsed,
+#timer-target,
+#clicker-feedback {
+  margin-block: 0;
+}
+
+#timer-elapsed {
+  font-variant-numeric: tabular-nums;
+}
+
+#clicker-navigation {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+#clicker-navigation button {
+  touch-action: manipulation;
+}
+
+#clicker [aria-disabled="true"] {
+  opacity: 0.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #stage-world {
+    transition: none;
+  }
 }

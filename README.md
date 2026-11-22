@@ -6,7 +6,7 @@ An interactive web application and live audience telemetry system for demonstrat
 
 ## Overview
 
-Reclaim replaces conventional static presentation slides with an interactive, full-viewport web application designed for live demonstrations. It couples a presenter stage with a real-time mobile interface (`/vote.html`) allowing audiences to log actions on their own devices with sub-second synchronization.
+Reclaim replaces conventional static presentation slides with an interactive, full-viewport web application designed for live demonstrations. It couples a five-station presenter stage with a paired phone clicker (`/clicker.html`) and a live audience voting page (`/vote.html`).
 
 - **Live Stage:** [https://khakis23.github.io/comm1010-presentation/](https://khakis23.github.io/comm1010-presentation/)
 - **Mobile Telemetry Input:** [https://khakis23.github.io/comm1010-presentation/vote.html](https://khakis23.github.io/comm1010-presentation/vote.html)
@@ -16,10 +16,10 @@ Reclaim replaces conventional static presentation slides with an interactive, fu
 ## Tech Stack & Architecture
 
 - **Runtime & Bundler:** Vite + Vanilla ES Modules (zero-bloat, sub-50ms HMR).
-- **Presentation Engine:** Keyboard/touch-driven full-bleed stage transitions with hardware-accelerated transforms.
+- **Presentation Engine:** A CSS 3D camera with keyboard or paired phone control.
 - **Dynamic Telemetry & Sync:**
   - `BroadcastChannel` + `localStorage` event pump for instant local multi-window and offline testing.
-  - Pluggable WebSocket / Firebase Realtime transport layer for remote multi-device ingestion.
+  - Firebase Realtime Database for cross-device voting and presenter commands.
   - Client-side dynamic QR code generation encoding session room identifiers.
 - **Fail-Safe Offline Simulation:** Built-in presenter telemetry simulation (`KeyS`) generating realistic staggered incoming action streams without network dependency.
 
@@ -40,18 +40,19 @@ npm run dev
 ```
 
 - **Presenter Stage:** [http://localhost:5173/](http://localhost:5173/)
-- **Mobile Client:** [http://localhost:5173/vote.html](http://localhost:5173/vote.html)
+- Open or copy the presenter clicker pairing link in the stage HUD.
+- Scan the QR code or follow the audience voting link at Station 5.
 
 ---
 
 ## Testing Real-Time Telemetry
 
 1. Open `http://localhost:5173/` in your main browser window.
-2. Open `http://localhost:5173/vote.html` in a second window or mobile viewport (same profile).
-3. On the presenter stage, navigate to the **Action Hub** (Stage 5) to see the live-rendered session QR code.
-4. Advance to the **Live Telemetry Board** (Stage 6) and press `R` to ensure a clean board.
-5. In the mobile voter window, increment actions (+1, +3, +7) and click **Submit Points to the Board**.
-6. The presenter board updates instantly without page reload via the cross-tab sync bus.
+2. Open the paired clicker link in a second tab and use **Next** to reach the **Action and Telemetry Hub** at Station 5.
+3. Open the voting link in another tab. Press `R` on the presenter to start a fresh round.
+4. In the voter tab, increment actions (+1, +3, +7) and click **Submit Points to the Board**. The tally updates in the hub.
+
+For cross-device rehearsal, configure Firebase and publish the database rules. See [.agents/WORKFLOW.md](.agents/WORKFLOW.md).
 
 ---
 
@@ -59,8 +60,8 @@ npm run dev
 
 | Key | Function |
 | :--- | :--- |
-| `→` / `Space` | Advance to next stage |
-| `←` | Return to previous stage |
+| `→` / `Space` | Advance to next station |
+| `←` | Return to previous station |
 | `F` | Toggle native fullscreen |
 | `S` | **Offline Telemetry Simulator:** Triggers realistic incoming audience submissions |
 | `R` | **Reset Telemetry Board:** Clears active tally and opens a fresh round |

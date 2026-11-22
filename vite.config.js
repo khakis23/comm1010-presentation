@@ -8,6 +8,7 @@ export default defineConfig({
       input: {
         presenter: resolve(import.meta.dirname, 'index.html'),
         voter: resolve(import.meta.dirname, 'vote.html'),
+        clicker: resolve(import.meta.dirname, 'clicker.html'),
       },
     },
   },

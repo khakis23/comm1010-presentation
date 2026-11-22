@@ -8,88 +8,111 @@
     <script type="module" src="/src/presenter.js"></script>
   </head>
   <body class="presenter">
-    <header class="presenter-header">
-      <p>COMM 1010 · Reclaiming Digital Agency</p>
-      <p id="board-connection" aria-live="polite"></p>
+    <header id="stage-hud">
+      <p id="station-position" role="status">Station 1 / 5</p>
+      <p id="board-connection" role="status"></p>
+      <p id="control-connection" role="status"></p>
+      <p>
+        <a id="clicker-link" href="./clicker.html" target="_blank" rel="noopener">Open presenter clicker</a>
+        <button id="copy-clicker-link" type="button" disabled>Copy clicker link</button>
+      </p>
     </header>
 
-    <noscript><p>Enable JavaScript to navigate the slides, display the voting QR code, and update the board.</p></noscript>
+    <noscript><p>Enable JavaScript to navigate the stations, display the voting QR code, and update the board.</p></noscript>
 
-    <main id="presentation" aria-label="Presentation slides">
-      <section id="slide-1" class="slide" aria-labelledby="slide-1-heading">
-        <h1 id="slide-1-heading" tabindex="-1">Attention and cognitive impact</h1>
-        <p>Opening hook placeholder</p>
-      </section>
+    <main id="stage-viewport" aria-label="Reclaiming Digital Agency">
+      <div id="stage-world">
+        <section id="station-1" class="station" data-station="1" data-active aria-labelledby="station-1-heading">
+          <h1 id="station-1-heading" tabindex="-1">Cognitive metric</h1>
+          <div id="flynn-effect" data-widget="cognitive-metric">
+            <h2>Flynn effect</h2>
+          </div>
+        </section>
 
-      <section id="slide-2" class="slide" aria-labelledby="slide-2-heading" hidden>
-        <h1 id="slide-2-heading" tabindex="-1">Memory experiment</h1>
-        <ul>
-          <li>YouTube comparison placeholder</li>
-          <li>Short-form comparison placeholder</li>
-        </ul>
-      </section>
+        <section id="station-2" class="station" data-station="2" inert aria-labelledby="station-2-heading">
+          <h1 id="station-2-heading" tabindex="-1">Memory experiment</h1>
+          <div id="memory-experiment" data-widget="memory" data-state="baseline">
+            <ul id="memory-cards" aria-label="Example memory cards">
+              <li data-memory-card>Anchor</li>
+              <li data-memory-card data-decays>Lantern</li>
+              <li data-memory-card data-decays>Compass</li>
+            </ul>
+            <button id="memory-decay" type="button" aria-pressed="false" aria-controls="memory-cards" disabled>Simulate memory decay</button>
+            <p id="memory-result" role="status">3 of 3 example items recalled.</p>
+          </div>
+        </section>
 
-      <section id="slide-3" class="slide" aria-labelledby="slide-3-heading" hidden>
-        <h1 id="slide-3-heading" tabindex="-1">The 11-year glass rectangle</h1>
-        <p>Statistic and source placeholder</p>
-      </section>
+        <section id="station-3" class="station" data-station="3" inert aria-labelledby="station-3-heading">
+          <h1 id="station-3-heading" tabindex="-1">Lifetime attention drain</h1>
+          <div id="lifespan-calculator" data-widget="lifespan">
+            <label for="lifespan-hours">Hours per day</label>
+            <input id="lifespan-hours" type="range" min="1.0" max="10.0" step="0.1" value="2.2" aria-describedby="lifespan-assumptions" disabled>
+            <output id="lifespan-result" for="lifespan-hours"></output>
+            <p id="lifespan-assumptions">Estimate based on an 80-year lifespan and 16 waking hours per day.</p>
+          </div>
+        </section>
 
-      <section id="slide-4" class="slide" aria-labelledby="slide-4-heading" hidden>
-        <h1 id="slide-4-heading" tabindex="-1">Before and after</h1>
-        <p>Real-world story placeholders</p>
-      </section>
+        <section id="station-4" class="station" data-station="4" inert aria-labelledby="station-4-heading">
+          <h1 id="station-4-heading" tabindex="-1">Friction protocol</h1>
+          <div id="friction-protocol" data-widget="friction" data-state="default">
+            <button id="friction-toggle" type="button" aria-pressed="false" aria-controls="friction-state" disabled>Biometric Shield</button>
+            <p id="friction-state" role="status">Default OS</p>
+          </div>
+        </section>
 
-      <section id="slide-5" class="slide" aria-labelledby="slide-5-heading" hidden>
-        <h1 id="slide-5-heading" tabindex="-1">Take action</h1>
-        <ul>
-          <li>Lock an app behind Face ID or Secure Folder for 1 point.</li>
-          <li>Delete an app for a 7-day fast for 3 points.</li>
-          <li>Permanently delete an account for 7 points.</li>
-        </ul>
-        <canvas id="vote-qr" role="img" aria-label="QR code for the voting page" hidden></canvas>
-        <p><a id="vote-link" href="./vote.html">Open the voting page</a></p>
-        <p id="qr-status" role="status"></p>
-      </section>
-
-      <section id="slide-6" class="slide" aria-labelledby="slide-6-heading" hidden>
-        <h1 id="slide-6-heading" tabindex="-1">Classroom goal</h1>
-        <dl id="board-totals">
-          <dt>Goal</dt>
-          <dd id="board-goal">20 points</dd>
-          <dt>Total points</dt>
-          <dd id="board-points">0</dd>
-          <dt>Voters</dt>
-          <dd id="board-voters">0</dd>
-        </dl>
-        <p id="goal-achieved" hidden>Goal Achieved</p>
-        <p id="board-simulated" hidden></p>
-        <p id="board-announcement" class="visually-hidden" role="status"></p>
-        <h2>Action breakdown</h2>
-        <dl id="board-breakdown">
-          <dt>Apps locked</dt>
-          <dd id="board-locked">0 actions · 0 points</dd>
-          <dt>Apps deleted for a 7-day fast</dt>
-          <dd id="board-fasted">0 actions · 0 points</dd>
-          <dt>Accounts permanently deleted</dt>
-          <dd id="board-deleted">0 actions · 0 points</dd>
-        </dl>
-      </section>
+        <section id="station-5" class="station" data-station="5" inert aria-labelledby="station-5-heading">
+          <h1 id="station-5-heading" tabindex="-1">Action and Telemetry Hub</h1>
+          <div id="action-hub" data-widget="actions" data-goal="pending">
+            <div id="action-instructions">
+              <ul>
+                <li>Lock an app behind Face ID or Secure Folder for 1 point.</li>
+                <li>Delete an app for a 7-day fast for 3 points.</li>
+                <li>Permanently delete an account for 7 points.</li>
+              </ul>
+              <canvas id="vote-qr" role="img" aria-label="QR code for the voting page" hidden></canvas>
+              <p><a id="vote-link" href="./vote.html">Open the voting page</a></p>
+              <p id="qr-status" role="status"></p>
+            </div>
+            <div id="action-telemetry">
+              <progress id="board-progress" max="20" value="0" aria-label="Progress toward the classroom goal"></progress>
+              <dl id="board-totals">
+                <dt>Goal</dt>
+                <dd id="board-goal">20 points</dd>
+                <dt>Total points</dt>
+                <dd id="board-points">0</dd>
+                <dt>Voters</dt>
+                <dd id="board-voters">0</dd>
+              </dl>
+              <p id="goal-achieved" hidden>Goal Achieved</p>
+              <p id="board-simulated" hidden></p>
+              <h2>Action breakdown</h2>
+              <dl id="board-breakdown">
+                <dt>Apps locked</dt>
+                <dd id="board-locked">0 actions · 0 points</dd>
+                <dt>Apps deleted for a 7-day fast</dt>
+                <dd id="board-fasted">0 actions · 0 points</dd>
+                <dt>Accounts permanently deleted</dt>
+                <dd id="board-deleted">0 actions · 0 points</dd>
+              </dl>
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
 
-    <footer class="presenter-footer">
-      <nav class="presenter-controls" aria-label="Presentation controls">
-        <button id="slide-previous" type="button" aria-keyshortcuts="ArrowLeft" disabled>Previous</button>
-        <button id="slide-next" type="button" aria-keyshortcuts="ArrowRight Space" disabled>Next</button>
-        <button id="slide-fullscreen" type="button" aria-keyshortcuts="F" aria-pressed="false" disabled>Fullscreen</button>
-        <button id="board-simulate" type="button" aria-keyshortcuts="S" disabled>Simulate votes</button>
-        <button id="board-reset" type="button" aria-keyshortcuts="R" disabled>Reset votes</button>
-      </nav>
-      <p><label><input id="single-key-shortcuts" type="checkbox" checked> Enable F, S and R shortcuts</label></p>
-      <div class="presentation-progress">
-        <p id="slide-position">Slide 1 of 6</p>
-        <progress id="slide-progress" max="6" value="1" aria-label="Presentation progress"></progress>
-      </div>
+    <footer id="stage-controls">
+      <details id="emergency-controls">
+        <summary>Presenter controls</summary>
+        <p>Right Arrow or Space to advance. Left Arrow to go back.</p>
+        <div class="presenter-controls">
+          <button id="stage-fullscreen" type="button" aria-keyshortcuts="F" aria-pressed="false" disabled>Fullscreen</button>
+          <button id="board-simulate" type="button" aria-keyshortcuts="S" disabled>Simulate votes</button>
+          <button id="board-reset" type="button" aria-keyshortcuts="R" disabled>Reset votes</button>
+        </div>
+        <p><label><input id="single-key-shortcuts" type="checkbox" checked> Enable F, S and R shortcuts</label></p>
+      </details>
       <p id="presenter-status" role="status"></p>
+      <p id="board-announcement" class="visually-hidden" role="status"></p>
     </footer>
   </body>
 </html>

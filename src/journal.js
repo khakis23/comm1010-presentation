@@ -20,7 +20,7 @@ export function rememberRoom() {
   return freshRoom;
 }
 
-export function createJournal(namespace, onChange) {
+export function createJournal(namespace, onChange, onMessage) {
   const prefix = `comm1010:${namespace}:`;
   const entries = new Map();
   let storage;
@@ -66,6 +66,10 @@ export function createJournal(namespace, onChange) {
   try {
     channel = new BroadcastChannel(prefix);
     channel.addEventListener('message', ({ data }) => {
+      if (data?.message) {
+        onMessage?.(data.message);
+        return;
+      }
       if (typeof data?.key !== 'string' || typeof data.value !== 'string') return;
       if (data.durable && storage) {
         refresh(data.key);
@@ -80,6 +84,17 @@ export function createJournal(namespace, onChange) {
   window.addEventListener('storage', (event) => {
     if (!event.key?.startsWith(prefix)) return;
     const key = event.key.slice(prefix.length);
+    if (key === 'message') {
+      if (!event.newValue || !onMessage) return;
+      let payload;
+      try {
+        payload = JSON.parse(event.newValue);
+      } catch {
+        return;
+      }
+      if (payload?.message) onMessage(payload.message);
+      return;
+    }
     if (event.newValue === null) accept(key, null);
     else refresh(key);
   });
@@ -91,6 +106,19 @@ export function createJournal(namespace, onChange) {
       return Array.from(entries.keys())
         .filter((key) => key.startsWith(start))
         .map(read);
+    },
+    send(message) {
+      if (channel) {
+        channel.postMessage({ message });
+      } else if (storage) {
+        const key = prefix + 'message';
+        try {
+          storage.setItem(key, JSON.stringify({ message, id: randomId() }));
+          storage.removeItem(key);
+        } catch {
+          // Without either cross-tab mechanism the peer will remain unavailable.
+        }
+      }
     },
     write(key, value) {
       const serialized = JSON.stringify(value);

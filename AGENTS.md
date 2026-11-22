@@ -1,10 +1,10 @@
 # COMM 1010 presentation
 
-This Vite project supports a 7–9 minute call-to-action speech about reclaiming digital agency. The presenter opens `index.html` and the audience opens `vote.html` via the on-slide QR code. The classroom goal is 20 points.
+This Vite project supports a 7–9 minute call-to-action speech about reclaiming digital agency. The presenter opens `index.html`, the phone opens `clicker.html` via the presenter’s pairing link, and the audience opens `vote.html` via the Action Hub QR code. The classroom goal is 20 points.
 
 ## Responsibilities
 
-Codex owns the repository, CI, semantic HTML, accessibility, interactions, QR generation, voting and synchronization. Antigravity (Gemini) owns visual design, themes, typography, motion and final speech or slide copy. Codex keeps CSS to functional wireframes, reset rules, and accessible controls. Preserve the page landmarks, slide IDs, form labels, live announcements, focus behavior and JavaScript hooks during design changes.
+Codex owns the repository, CI, semantic HTML, accessibility, interactions, QR generation, voting and synchronization. Antigravity (Gemini) owns visual design, themes, typography, motion and final speech or station copy. Codex keeps CSS to functional wireframes, reset rules, and accessible controls. Preserve the page landmarks, station IDs, form labels, live announcements, focus behavior and JavaScript hooks during design changes.
 
 ## Project guide
 
