@@ -148,14 +148,21 @@ next.addEventListener('click', () => showSlide(active + 1));
 fullscreen.addEventListener('click', toggleFullscreen);
 simulate.addEventListener('click', startSimulation);
 reset.addEventListener('click', resetBoard);
+shortcuts.addEventListener('change', () => {
+  for (const [control, key] of [[fullscreen, 'F'], [simulate, 'S'], [reset, 'R']]) {
+    if (shortcuts.checked) control.setAttribute('aria-keyshortcuts', key);
+    else control.removeAttribute('aria-keyshortcuts');
+  }
+});
 document.addEventListener('fullscreenchange', () => {
   fullscreen.setAttribute('aria-pressed', String(Boolean(document.fullscreenElement)));
 });
 
 const interactive = 'a, button, input, select, textarea, summary, [contenteditable]';
 document.addEventListener('keydown', (event) => {
-  if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey ||
-      event.isComposing || event.target.closest('input, select, textarea, [contenteditable]')) return;
+  if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.isComposing) return;
+  const target = event.target instanceof Element ? event.target : null;
+  if (target?.closest('input, select, textarea, [contenteditable]')) return;
 
   switch (event.code) {
     case 'ArrowLeft':
@@ -163,7 +170,7 @@ document.addEventListener('keydown', (event) => {
       if (active > 0) showSlide(active - 1);
       break;
     case 'Space':
-      if (event.target.closest(interactive)) break;
+      if (target?.closest(interactive)) break;
       // Space and Right Arrow both advance.
     case 'ArrowRight':
       event.preventDefault();
