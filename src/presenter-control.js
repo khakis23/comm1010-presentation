@@ -5,7 +5,10 @@ export function validCommand(command) {
   return commands.has(command);
 }
 
-export function validStation(station) {
-  return Number.isInteger(station?.index) && station.index >= 1 && station.index <= 5
-    && typeof station.title === 'string' && station.title.length > 0 && station.title.length <= 160;
+export function readStation(station) {
+  if (!station) return null;
+  const { index, title, total = 5 } = station;
+  if (!Number.isSafeInteger(index) || !Number.isSafeInteger(total) || index < 1 || index > total
+    || typeof title !== 'string' || !title.trim() || title.length > 160) return null;
+  return { index, total, title };
 }

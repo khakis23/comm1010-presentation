@@ -7,112 +7,224 @@
     <link rel="stylesheet" href="/src/styles.css">
     <script type="module" src="/src/presenter.js"></script>
   </head>
-  <body class="presenter">
-    <header id="stage-hud">
-      <p id="station-position" role="status">Station 1 / 5</p>
-      <p id="board-connection" role="status"></p>
-      <p id="control-connection" role="status"></p>
-      <p>
-        <a id="clicker-link" href="./clicker.html" target="_blank" rel="noopener">Open presenter clicker</a>
-        <button id="copy-clicker-link" type="button" disabled>Copy clicker link</button>
-      </p>
-    </header>
+  <body class="presenter" data-mode="lobby">
+    <main id="presenter-lobby" aria-labelledby="lobby-title">
+      <div class="lobby-card">
+        <h1 id="lobby-title">Reclaiming Digital Agency</h1>
+        <div class="lobby-launch">
+          <button id="start-presentation" type="button" disabled>Start Presentation</button>
+          <figure class="clicker-pairing">
+            <canvas id="clicker-qr" role="img" aria-label="QR code for the paired presenter clicker" hidden></canvas>
+            <figcaption id="clicker-qr-label">Scan to pair clicker</figcaption>
+          </figure>
+        </div>
 
-    <noscript><p>Enable JavaScript to navigate the stations, display the voting QR code, and update the board.</p></noscript>
+        <div class="lobby-connections">
+          <p id="board-connection" role="status"></p>
+          <p id="control-connection" role="status"></p>
+        </div>
+        <details id="emergency-controls">
+          <summary>Presenter tools</summary>
+          <div class="presenter-controls">
+            <a id="clicker-link" href="./clicker.html" target="_blank" rel="noopener">Open presenter clicker</a>
+            <button id="copy-clicker-link" type="button" disabled>Copy clicker link</button>
+          </div>
+          <p id="station-position" role="status">Station 1</p>
+          <div class="presenter-controls">
+            <button id="stage-prev" type="button" disabled>Previous station</button>
+            <button id="stage-next" type="button" disabled>Next station</button>
+            <button id="pause-opening-animation" type="button" aria-pressed="false" aria-controls="jack-couch-scene" disabled>Pause opening animation</button>
+            <button id="board-simulate" type="button" aria-keyshortcuts="S" disabled>Simulate votes</button>
+            <button id="board-reset" type="button" aria-keyshortcuts="R" disabled>Reset votes</button>
+          </div>
+          <p>On stage, use Right Arrow or Space to advance, Left Arrow to go back, F for fullscreen, and Escape to exit. Use S to simulate votes and R to reset the board.</p>
+          <p><label><input id="single-key-shortcuts" type="checkbox" checked> Enable F, S and R shortcuts</label></p>
+        </details>
+        <p id="presenter-status" role="status"></p>
+        <noscript><p>Enable JavaScript to navigate the stations, display the voting QR code, and update the board.</p></noscript>
+      </div>
+    </main>
 
-    <main id="stage-viewport" aria-label="Reclaiming Digital Agency">
+    <main id="stage-viewport" aria-label="Reclaiming Digital Agency" hidden inert>
       <div id="stage-world">
         <section id="station-1" class="station" data-station="1" data-active aria-labelledby="station-1-heading">
-          <h1 id="station-1-heading" tabindex="-1">Cognitive metric</h1>
-          <div id="flynn-effect" data-widget="cognitive-metric">
+          <h1 id="station-1-heading" class="visually-hidden" tabindex="-1">Jack on the couch</h1>
+          <div id="jack-couch-scene" class="scene-stage"></div>
+          <div id="flynn-effect" data-widget="cognitive-metric" hidden>
             <h2>Flynn effect</h2>
           </div>
         </section>
 
-        <section id="station-2" class="station" data-station="2" inert aria-labelledby="station-2-heading">
-          <h1 id="station-2-heading" tabindex="-1">Memory experiment</h1>
-          <div id="memory-experiment" data-widget="memory" data-state="baseline">
-            <ul id="memory-cards" aria-label="Example memory cards">
-              <li data-memory-card>Anchor</li>
-              <li data-memory-card data-decays>Lantern</li>
-              <li data-memory-card data-decays>Compass</li>
-            </ul>
-            <button id="memory-decay" type="button" aria-pressed="false" aria-controls="memory-cards" disabled>Simulate memory decay</button>
-            <p id="memory-result" role="status">3 of 3 example items recalled.</p>
+        <!-- Transition demo stations -->
+        <section id="station-2" class="station station-demo" data-station="2" data-transition="slide-right" inert aria-labelledby="station-2-heading">
+          <div class="demo-card">
+            <p class="transition-pill">[TRANSITION: slide-right] · alias: slide</p>
+            <h1 id="station-2-heading" tabindex="-1">Slide Right</h1>
+            <p>Glides cleanly right across the canvas while leaving Jack’s couch peeking off the left edge.</p>
           </div>
         </section>
 
-        <section id="station-3" class="station" data-station="3" inert aria-labelledby="station-3-heading">
-          <h1 id="station-3-heading" tabindex="-1">Lifetime attention drain</h1>
-          <div id="lifespan-calculator" data-widget="lifespan">
-            <label for="lifespan-hours">Hours per day</label>
-            <input id="lifespan-hours" type="range" min="1.0" max="10.0" step="0.1" value="2.2" aria-describedby="lifespan-assumptions" disabled>
-            <output id="lifespan-result" for="lifespan-hours"></output>
-            <p id="lifespan-assumptions">Estimate based on an 80-year lifespan and 16 waking hours per day.</p>
+        <section id="station-3" class="station station-demo" data-station="3" data-transition="slide-down" inert aria-labelledby="station-3-heading">
+          <div class="demo-card">
+            <p class="transition-pill">[TRANSITION: slide-down] · alias: drop</p>
+            <h1 id="station-3-heading" tabindex="-1">Slide Down (Drop)</h1>
+            <p>Drops vertically down with a subtle 8° pitch, keeping Slide Right visible right above.</p>
           </div>
         </section>
 
-        <section id="station-4" class="station" data-station="4" inert aria-labelledby="station-4-heading">
-          <h1 id="station-4-heading" tabindex="-1">Friction protocol</h1>
-          <div id="friction-protocol" data-widget="friction" data-state="default">
-            <button id="friction-toggle" type="button" aria-pressed="false" aria-controls="friction-state" disabled>Biometric Shield</button>
-            <p id="friction-state" role="status">Default OS</p>
+        <section id="station-4" class="station station-demo" data-station="4" data-transition="slide-left" inert aria-labelledby="station-4-heading">
+          <div class="demo-card">
+            <p class="transition-pill">[TRANSITION: slide-left]</p>
+            <h1 id="station-4-heading" tabindex="-1">Slide Left</h1>
+            <p>Pans left across the canvas below Station 1 without colliding with earlier frames.</p>
           </div>
         </section>
 
-        <section id="station-5" class="station" data-station="5" inert aria-labelledby="station-5-heading">
-          <h1 id="station-5-heading" tabindex="-1">Action and Telemetry Hub</h1>
-          <div id="action-hub" data-widget="actions" data-goal="pending">
-            <div id="action-instructions">
-              <ul>
-                <li>Lock an app behind Face ID or Secure Folder for 1 point.</li>
-                <li>Delete an app for a 7-day fast for 3 points.</li>
-                <li>Permanently delete an account for 7 points.</li>
+        <section id="station-5" class="station station-demo" data-station="5" data-transition="zoom-in" inert aria-labelledby="station-5-heading">
+          <div class="demo-card">
+            <p class="transition-pill">[TRANSITION: zoom-in] · alias: zoom</p>
+            <h1 id="station-5-heading" tabindex="-1">Memory experiment (Zoom In)</h1>
+            <p>Dives 0.45× inside the previous frame so Station 4 scales up around the edges.</p>
+            <div id="memory-experiment" data-widget="memory" data-state="baseline">
+              <ul id="memory-cards" aria-label="Example memory cards">
+                <li data-memory-card>Anchor</li>
+                <li data-memory-card data-decays>Lantern</li>
+                <li data-memory-card data-decays>Compass</li>
               </ul>
-              <canvas id="vote-qr" role="img" aria-label="QR code for the voting page" hidden></canvas>
-              <p><a id="vote-link" href="./vote.html">Open the voting page</a></p>
-              <p id="qr-status" role="status"></p>
+              <button id="memory-decay" type="button" aria-pressed="false" aria-controls="memory-cards" disabled>Simulate memory decay</button>
+              <p id="memory-result" role="status">3 of 3 example items recalled.</p>
             </div>
-            <div id="action-telemetry">
-              <progress id="board-progress" max="20" value="0" aria-label="Progress toward the classroom goal"></progress>
-              <dl id="board-totals">
-                <dt>Goal</dt>
-                <dd id="board-goal">20 points</dd>
-                <dt>Total points</dt>
-                <dd id="board-points">0</dd>
-                <dt>Voters</dt>
-                <dd id="board-voters">0</dd>
-              </dl>
-              <p id="goal-achieved" hidden>Goal Achieved</p>
-              <p id="board-simulated" hidden></p>
-              <h2>Action breakdown</h2>
-              <dl id="board-breakdown">
-                <dt>Apps locked</dt>
-                <dd id="board-locked">0 actions · 0 points</dd>
-                <dt>Apps deleted for a 7-day fast</dt>
-                <dd id="board-fasted">0 actions · 0 points</dd>
-                <dt>Accounts permanently deleted</dt>
-                <dd id="board-deleted">0 actions · 0 points</dd>
-              </dl>
+          </div>
+        </section>
+
+        <section id="station-6" class="station station-demo" data-station="6" data-transition="zoom-out" data-dx="3.9" inert aria-labelledby="station-6-heading">
+          <div class="demo-card">
+            <p class="transition-pill">[TRANSITION: zoom-out]</p>
+            <h1 id="station-6-heading" tabindex="-1">Zoom Out</h1>
+            <p>Pulls the camera wide back (1.65×), shrinking the zoomed-in Memory card cleanly to the left.</p>
+          </div>
+        </section>
+
+        <section id="station-7" class="station station-demo" data-station="7" data-transition="rotate-right" inert aria-labelledby="station-7-heading">
+          <div class="demo-card">
+            <p class="transition-pill">[TRANSITION: rotate-right] · alias: rotate</p>
+            <h1 id="station-7-heading" tabindex="-1">Rotate Right (3D Yaw)</h1>
+            <p>Pivots 38° around the Y-axis so the previous card stays turned at an angle on your left.</p>
+          </div>
+        </section>
+
+        <section id="station-8" class="station station-demo" data-station="8" data-transition="slide-up" inert aria-labelledby="station-8-heading">
+          <div class="demo-card">
+            <p class="transition-pill">[TRANSITION: slide-up] · alias: rise</p>
+            <h1 id="station-8-heading" tabindex="-1">Slide Up (Rise)</h1>
+            <p>Rises vertically inside the rotated coordinate frame—proving chained relative directions work naturally.</p>
+          </div>
+        </section>
+
+        <section id="station-9" class="station station-demo" data-station="9" data-transition="rotate-left" data-dy="-0.85" inert aria-labelledby="station-9-heading">
+          <div class="demo-card">
+            <p class="transition-pill">[TRANSITION: rotate-left]</p>
+            <h1 id="station-9-heading" tabindex="-1">Rotate Left (3D Yaw)</h1>
+            <p>Pivots 38° the opposite direction in 3D while stepping up into clear space (`data-dy="-0.85"`).</p>
+          </div>
+        </section>
+
+        <section id="station-10" class="station station-demo" data-station="10" data-transition="tilt-up" inert aria-labelledby="station-10-heading">
+          <div class="demo-card">
+            <p class="transition-pill">[TRANSITION: tilt-up]</p>
+            <h1 id="station-10-heading" tabindex="-1">Lifetime attention drain (Tilt Up)</h1>
+            <p>Pitches 30° upward on the X-axis, tilting Rotate Left below you in 3D perspective.</p>
+            <div id="lifespan-calculator" data-widget="lifespan">
+              <label for="lifespan-hours">Hours per day</label>
+              <input id="lifespan-hours" type="range" min="1.0" max="10.0" step="0.1" value="2.2" aria-describedby="lifespan-assumptions" disabled>
+              <output id="lifespan-result" for="lifespan-hours"></output>
+              <p id="lifespan-assumptions">Estimate based on an 80-year lifespan and 16 waking hours per day.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="station-11" class="station station-demo" data-station="11" data-transition="tilt-down" data-dx="1.05" inert aria-labelledby="station-11-heading">
+          <div class="demo-card">
+            <p class="transition-pill">[TRANSITION: tilt-down]</p>
+            <h1 id="station-11-heading" tabindex="-1">Tilt Down (3D Pitch)</h1>
+            <p>Steps right (`data-dx="1.05"`) and pitches +30° downward onto a tilted plane.</p>
+          </div>
+        </section>
+
+        <section id="station-12" class="station station-demo" data-station="12" data-transition="roll-right" inert aria-labelledby="station-12-heading">
+          <div class="demo-card">
+            <p class="transition-pill">[TRANSITION: roll-right] · alias: roll</p>
+            <h1 id="station-12-heading" tabindex="-1">Friction protocol (Roll Right)</h1>
+            <p>Rotates 36° clockwise around the screen Z-axis like turning a board on a desk.</p>
+            <div id="friction-protocol" data-widget="friction" data-state="default">
+              <button id="friction-toggle" type="button" aria-pressed="false" aria-controls="friction-state" disabled>Biometric Shield</button>
+              <p id="friction-state" role="status">Default OS</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="station-13" class="station station-demo" data-station="13" data-transition="swoop" inert aria-labelledby="station-13-heading">
+          <div class="demo-card">
+            <p class="transition-pill">[TRANSITION: swoop]</p>
+            <h1 id="station-13-heading" tabindex="-1">Swoop (3D Arc)</h1>
+            <p>Combines pan, pull-back, yaw, pitch, and roll in a sweeping 880ms Prezi-style arc.</p>
+          </div>
+        </section>
+
+        <section id="station-14" class="station station-demo" data-station="14" data-transition="roll-left" inert aria-labelledby="station-14-heading">
+          <div class="demo-card">
+            <p class="transition-pill">[TRANSITION: roll-left]</p>
+            <h1 id="station-14-heading" tabindex="-1">Roll Left (Z-Roll)</h1>
+            <p>Rotates 36° counter-clockwise while stepping left into fresh canvas space.</p>
+          </div>
+        </section>
+
+        <section id="station-15" class="station station-demo" data-station="15" data-transition="cut" inert aria-labelledby="station-15-heading">
+          <div class="demo-card demo-card--wide">
+            <p class="transition-pill">[TRANSITION: cut] · alias: none</p>
+            <h1 id="station-15-heading" tabindex="-1">Action and Telemetry Hub (Cut)</h1>
+            <div id="action-hub" data-widget="actions" data-goal="pending">
+              <div id="action-instructions">
+                <ul>
+                  <li>Lock an app behind Face ID or Secure Folder for 1 point.</li>
+                  <li>Delete an app for a 7-day fast for 3 points.</li>
+                  <li>Permanently delete an account for 7 points.</li>
+                </ul>
+                <canvas id="vote-qr" role="img" aria-label="QR code for the voting page" hidden></canvas>
+                <p><a id="vote-link" href="./vote.html">Open the voting page</a></p>
+                <p id="qr-status" role="status"></p>
+              </div>
+              <div id="action-telemetry">
+                <progress id="board-progress" max="20" value="0" aria-label="Progress toward the classroom goal"></progress>
+                <dl id="board-totals">
+                  <dt>Goal</dt>
+                  <dd id="board-goal">20 points</dd>
+                  <dt>Total points</dt>
+                  <dd id="board-points">0</dd>
+                  <dt>Voters</dt>
+                  <dd id="board-voters">0</dd>
+                </dl>
+                <p id="goal-achieved" hidden>Goal Achieved</p>
+                <p id="board-simulated" hidden></p>
+                <h2>Action breakdown</h2>
+                <dl id="board-breakdown">
+                  <dt>Apps locked</dt>
+                  <dd id="board-locked">0 actions · 0 points</dd>
+                  <dt>Apps deleted for a 7-day fast</dt>
+                  <dd id="board-fasted">0 actions · 0 points</dd>
+                  <dt>Accounts permanently deleted</dt>
+                  <dd id="board-deleted">0 actions · 0 points</dd>
+                </dl>
+              </div>
             </div>
           </div>
         </section>
       </div>
-    </main>
-
-    <footer id="stage-controls">
-      <details id="emergency-controls">
-        <summary>Presenter controls</summary>
-        <p>Right Arrow or Space to advance. Left Arrow to go back.</p>
-        <div class="presenter-controls">
-          <button id="stage-fullscreen" type="button" aria-keyshortcuts="F" aria-pressed="false" disabled>Fullscreen</button>
-          <button id="board-simulate" type="button" aria-keyshortcuts="S" disabled>Simulate votes</button>
-          <button id="board-reset" type="button" aria-keyshortcuts="R" disabled>Reset votes</button>
-        </div>
-        <p><label><input id="single-key-shortcuts" type="checkbox" checked> Enable F, S and R shortcuts</label></p>
-      </details>
-      <p id="presenter-status" role="status"></p>
+      <div class="stage-exit-zone">
+        <button id="exit-presentation" type="button" aria-label="Exit presentation" aria-keyshortcuts="Escape">Exit</button>
+      </div>
+      <p id="stage-status" class="visually-hidden" role="status"></p>
       <p id="board-announcement" class="visually-hidden" role="status"></p>
-    </footer>
+    </main>
   </body>
 </html>

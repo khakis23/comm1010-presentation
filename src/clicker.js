@@ -23,15 +23,15 @@ function text(element, value) {
 sync.subscribe(({ station, status, controlStatus }) => {
   const paired = Boolean(sync.room && sync.controlKey);
   const connectionStatus = controlStatus ?? (status === 'local' ? 'waiting' : status);
-  const ready = paired && ['local', 'ready'].includes(connectionStatus);
+  const ready = paired && station && ['local', 'ready'].includes(connectionStatus);
   connection.dataset.status = paired ? connectionStatus : 'unpaired';
-  text(connection, paired ? messages[connectionStatus] : 'Open the paired clicker link from the presenter stage.');
-  text(stationLabel, station ? `Station ${station.index} / 5 · ${station.title}` : 'Waiting for the presenter…');
+  text(connection, paired ? (messages[connectionStatus] ?? messages.error) : 'Open the paired clicker link from the presenter stage.');
+  text(stationLabel, station ? `Station ${station.index} / ${station.total} · ${station.title}` : 'Waiting for the presenter…');
 
   for (const button of commands) {
     button.disabled = !ready;
-    const atBoundary = (button.dataset.command === 'prev' && station?.index === 1)
-      || (button.dataset.command === 'next' && station?.index === 5);
+    const atBoundary = station && ((button.dataset.command === 'prev' && station.index === 1)
+      || (button.dataset.command === 'next' && station.index === station.total));
     button.setAttribute('aria-disabled', String(!ready || atBoundary));
   }
 });

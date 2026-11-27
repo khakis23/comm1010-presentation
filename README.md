@@ -6,7 +6,7 @@ An interactive web application and live audience telemetry system for demonstrat
 
 ## Overview
 
-Reclaim replaces conventional static presentation slides with an interactive, full-viewport web application designed for live demonstrations. It couples a five-station presenter stage with a paired phone clicker (`/clicker.html`) and a live audience voting page (`/vote.html`).
+Reclaim replaces conventional static presentation slides with an interactive, full-viewport web application designed for live demonstrations. It couples a 15-station presenter stage with a paired phone clicker (`/clicker.html`) and a live audience voting page (`/vote.html`).
 
 - **Live Stage:** [https://khakis23.github.io/comm1010-presentation/](https://khakis23.github.io/comm1010-presentation/)
 - **Mobile Telemetry Input:** [https://khakis23.github.io/comm1010-presentation/vote.html](https://khakis23.github.io/comm1010-presentation/vote.html)
@@ -40,15 +40,15 @@ npm run dev
 ```
 
 - **Presenter Stage:** [http://localhost:5173/](http://localhost:5173/)
-- Open or copy the presenter clicker pairing link in the stage HUD.
-- Scan the QR code or follow the audience voting link at Station 5.
+- Scan the clicker QR in the lobby or open **Presenter tools** for the pairing link. Select **Start Presentation** to go fullscreen, or use `?station=N` to open directly on a station.
+- Scan the audience QR code or follow the voting link at Station 15.
 
 ---
 
 ## Testing Real-Time Telemetry
 
 1. Open `http://localhost:5173/` in your main browser window.
-2. Open the paired clicker link in a second tab and use **Next** to reach the **Action and Telemetry Hub** at Station 5.
+2. Open the paired clicker link in a second tab and use **Next** to start presenting and reach the **Action and Telemetry Hub** at Station 15.
 3. Open the voting link in another tab. Press `R` on the presenter to start a fresh round.
 4. In the voter tab, increment actions (+1, +3, +7) and click **Submit Points to the Board**. The tally updates in the hub.
 
@@ -63,6 +63,7 @@ For cross-device rehearsal, configure Firebase and publish the database rules. S
 | `→` / `Space` | Advance to next station |
 | `←` | Return to previous station |
 | `F` | Toggle native fullscreen |
+| `Escape` | Exit presentation and return to the lobby |
 | `S` | **Offline Telemetry Simulator:** Triggers realistic incoming audience submissions |
 | `R` | **Reset Telemetry Board:** Clears active tally and opens a fresh round |
 

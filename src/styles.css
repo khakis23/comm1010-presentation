@@ -23,6 +23,11 @@ button {
   outline-offset: 2px;
 }
 
+.station[tabindex="-1"]:focus,
+.station [tabindex="-1"]:focus {
+  outline: none;
+}
+
 .presenter-controls,
 .stepper-controls,
 .clicker-utilities {
@@ -42,7 +47,8 @@ button {
   text-align: center;
 }
 
-#vote-qr {
+#vote-qr,
+#clicker-qr {
   display: block;
   max-inline-size: 100%;
   block-size: auto;
@@ -59,32 +65,127 @@ button {
   white-space: nowrap;
 }
 
-.presenter,
 .clicker {
   min-block-size: calc(100dvh - 2rem);
 }
 
 .presenter {
-  display: grid;
-  grid-template-rows: auto 1fr auto;
+  margin: 0;
+  color: #181818;
+  background: #fff;
 }
 
-#stage-hud {
+.presenter[data-mode="presenting"] {
+  overflow: hidden;
+}
+
+#presenter-lobby {
+  display: grid;
+  place-items: center;
+  min-block-size: 100dvh;
+  padding: 1rem;
+}
+
+.lobby-card {
+  inline-size: min(100%, 32rem);
+  padding: clamp(1rem, 4vw, 2rem);
+  border: 1px solid;
+}
+
+.lobby-card h1 {
+  margin-block: 0 1rem;
+  line-height: 1.2;
+}
+
+.lobby-launch {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, min(42%, 11rem));
+  align-items: center;
+  gap: 0.75rem;
+}
+
+#start-presentation {
+  padding: 0.75rem;
+  border: 1px solid #181818;
+  background: #181818;
+  color: #fff;
+  font-weight: 700;
+}
+
+.clicker-pairing {
+  margin: 0;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.clicker-pairing canvas {
+  margin-inline: auto;
+}
+
+.lobby-connections {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 0 1rem;
+  gap: 0.25rem 0.75rem;
+  margin-block: 1rem 0.5rem;
+  font-size: 0.875rem;
 }
 
-#stage-hud p,
+.lobby-connections p {
+  margin: 0;
+}
+
+#emergency-controls summary {
+  cursor: pointer;
+}
+
+#emergency-controls > .presenter-controls:first-of-type {
+  margin-block-start: 0.75rem;
+}
+
+#presenter-status {
+  margin-block: 0;
+}
+
+#presenter-status:not(:empty) {
+  margin-block-start: 0.5rem;
+}
+
 #clicker-hud p {
   margin-block: 0.25rem;
 }
 
 #stage-viewport {
   position: relative;
-  min-block-size: 55vh;
+  inline-size: 100vw;
+  block-size: 100dvh;
   overflow: clip;
+}
+
+.stage-exit-zone {
+  position: absolute;
+  z-index: 20;
+  top: 0;
+  right: 0;
+  display: grid;
+  place-items: center;
+  width: 4.5rem;
+  height: 4.5rem;
+}
+
+#exit-presentation {
+  padding: 0.4rem 0.85rem;
+  border: 1.5px solid #181818;
+  border-radius: 0.375rem;
+  background: #fff;
+  color: #181818;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.stage-exit-zone:is(:hover, :focus-within) #exit-presentation,
+#exit-presentation:focus-visible {
+  opacity: 1;
 }
 
 #stage-world {
@@ -92,7 +193,7 @@ button {
   inset: 0;
   transform-style: preserve-3d;
   will-change: transform;
-  transition: transform 550ms ease-in-out;
+  transition: transform var(--camera-duration, 700ms) var(--camera-ease, cubic-bezier(0.22, 1, 0.36, 1));
 }
 
 #stage-world[data-resizing] {
@@ -106,13 +207,167 @@ button {
 .station {
   position: absolute;
   inset: 0;
-  overflow: auto;
-  backface-visibility: hidden;
+  overflow: visible;
+  backface-visibility: visible;
   padding-inline: 0.25rem;
+  transition: opacity 550ms ease;
 }
 
 .station[inert] {
   pointer-events: none;
+}
+
+.station[data-visit="future"] {
+  opacity: 0;
+}
+
+.station[data-visit="past"] {
+  opacity: 0.34;
+}
+
+.station[data-active] {
+  opacity: 1;
+  overflow: auto;
+}
+
+.station-demo {
+  display: grid;
+  place-items: safe center;
+  padding: clamp(1rem, 3vw, 2.5rem);
+}
+
+.demo-card {
+  inline-size: min(100%, 40rem);
+  padding: clamp(1.5rem, 3.2vw, 2.4rem);
+  background: #ffffff;
+  border: 2px solid #181818;
+  border-radius: 1rem;
+  box-shadow: 0 14px 36px rgb(0 0 0 / 0.08);
+}
+
+.demo-card--wide {
+  inline-size: min(100%, 56rem);
+}
+
+.demo-card h1 {
+  margin-block: 0.5rem 0.65rem;
+}
+
+.transition-pill {
+  display: inline-block;
+  margin: 0;
+  padding: 0.2rem 0.65rem;
+  border: 1.5px solid #181818;
+  border-radius: 999px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+#station-1 {
+  display: grid;
+  place-items: center;
+}
+
+.scene-stage {
+  display: grid;
+  place-items: center;
+  inline-size: min(100%, 56rem);
+  block-size: min(100%, 72dvh);
+}
+
+.scene-stage svg {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  max-block-size: 72dvh;
+}
+
+@keyframes jack-breathe {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate(-3px, 8px) rotate(-0.9deg);
+  }
+}
+
+@keyframes feed-loop {
+  0%, 22% {
+    transform: translateY(0);
+  }
+  36%, 72% {
+    transform: translateY(-190px);
+  }
+  86%, 100% {
+    transform: translateY(-380px);
+  }
+}
+
+@keyframes feed-swipe-up {
+  0%, 18% {
+    transform: translateY(18px) scale(0.85);
+    opacity: 0;
+  }
+  24% {
+    transform: translateY(12px) scale(1);
+    opacity: 0.92;
+  }
+  36% {
+    transform: translateY(-95px) scale(0.95);
+    opacity: 0;
+  }
+  68% {
+    transform: translateY(18px) scale(0.85);
+    opacity: 0;
+  }
+  74% {
+    transform: translateY(12px) scale(1);
+    opacity: 0.92;
+  }
+  86% {
+    transform: translateY(-95px) scale(0.95);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(18px) scale(0.85);
+    opacity: 0;
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    opacity: 0.72;
+  }
+  33%, 82% {
+    opacity: 1;
+  }
+  55% {
+    opacity: 0.8;
+  }
+}
+
+.jack-torso-anim {
+  transform-origin: 540px 880px;
+  animation: jack-breathe 4.4s ease-in-out infinite;
+}
+
+.feed-scroll-track {
+  animation: feed-loop 3.6s cubic-bezier(0.25, 0.9, 0.35, 1) infinite;
+}
+
+.feed-swipe-dot {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: feed-swipe-up 3.6s cubic-bezier(0.25, 0.9, 0.35, 1) infinite;
+}
+
+.phone-glow-anim {
+  animation: glow-pulse 3.6s ease-in-out infinite;
+}
+
+.scene-stage[data-paused] :is(.jack-torso-anim, .feed-scroll-track, .feed-swipe-dot, .phone-glow-anim) {
+  animation-play-state: paused;
 }
 
 @media (min-width: 48rem) {
@@ -163,7 +418,16 @@ button {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #stage-world {
+  #stage-world,
+  .station,
+  #exit-presentation {
     transition: none;
+  }
+
+  .jack-torso-anim,
+  .feed-scroll-track,
+  .feed-swipe-dot,
+  .phone-glow-anim {
+    animation: none;
   }
 }

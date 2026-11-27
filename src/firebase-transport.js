@@ -8,7 +8,7 @@ import {
 } from '@firebase/database';
 import { INITIAL_ROUND, validBallot } from './ballots.js';
 import { withBrowserLock } from './journal.js';
-import { COMMAND_LIFETIME, validCommand, validStation } from './presenter-control.js';
+import { COMMAND_LIFETIME, readStation, validCommand } from './presenter-control.js';
 
 const TX_OPTIONS = { applyLocally: false };
 
@@ -70,6 +70,8 @@ export function createFirebaseTransport(config, { room, role, controlKey, onChan
   }
 
   function failControl() {
+    controlReady = false;
+    unwatchCommands?.();
     controlError = 'error';
     publish();
   }
@@ -88,6 +90,9 @@ export function createFirebaseTransport(config, { room, role, controlKey, onChan
     if (!presenter || !connected || metadata?.owner !== user.uid || !localStation || controlConnection) return;
     const connection = {};
     controlConnection = connection;
+    const onError = () => {
+      if (controlConnection === connection) failControl();
+    };
     Promise.all([stageRef.parent, commandsRef.parent].map(collectionIsPrivate)).then(async (permissions) => {
       if (controlConnection !== connection) return;
       if (permissions.includes(false)) {
@@ -100,17 +105,21 @@ export function createFirebaseTransport(config, { room, role, controlKey, onChan
         [`commands/${controlKey}`]: null,
       });
       if (controlConnection !== connection) return;
+      const initialStation = localStation;
+      await set(stageRef, initialStation);
+      if (controlConnection !== connection) return;
       controlError = undefined;
       controlReady = true;
-      watchCommands();
-      await set(stageRef, localStation);
-      if (controlConnection === connection) publish();
-    }).catch(() => {
-      if (controlConnection === connection) {
-        controlReady = false;
-        unwatchCommands?.();
-        failControl();
-      }
+      if (initialStation !== localStation) writeStation();
+      watchCommands(connection, onError);
+      publish();
+    }).catch(onError);
+  }
+
+  function writeStation() {
+    const connection = controlConnection;
+    void set(stageRef, localStation).catch(() => {
+      if (controlConnection === connection) failControl();
     });
   }
 
@@ -121,15 +130,15 @@ export function createFirebaseTransport(config, { room, role, controlKey, onChan
     });
     if (clicker) {
       onValue(stageRef, (snapshot) => {
-        station = validStation(snapshot.val()) ? snapshot.val() : null;
+        station = readStation(snapshot.val());
         publish();
       }, failControl);
     }
   }
 
-  function watchCommands() {
+  function watchCommands(connection, onError) {
     unwatchCommands = onChildAdded(commandsRef, (snapshot) => {
-      if (!controlReady) return;
+      if (!controlReady || controlConnection !== connection) return;
       const now = Date.now() + serverOffset;
       for (const [key, expiration] of consumed) {
         if (expiration <= now) consumed.delete(key);
@@ -139,8 +148,8 @@ export function createFirebaseTransport(config, { room, role, controlKey, onChan
         consumed.set(snapshot.key, expiresAt);
         onCommand(command);
       }
-      void remove(snapshot.ref).catch(failControl);
-    }, failControl);
+      void remove(snapshot.ref).catch(onError);
+    }, onError);
   }
 
   function observeRoom() {
@@ -152,6 +161,7 @@ export function createFirebaseTransport(config, { room, role, controlKey, onChan
         controlReady = false;
         controlConnection = undefined;
         unwatchCommands?.();
+        unwatchCommands = undefined;
       }
       createRoom();
       armControl();
@@ -224,9 +234,9 @@ export function createFirebaseTransport(config, { room, role, controlKey, onChan
 
   return {
     setStation(next) {
-      if (!presenter || !validStation(next)) return;
+      if (!presenter) return;
       localStation = next;
-      if (controlReady) void set(stageRef, next).catch(failControl);
+      if (controlReady) writeStation();
       else armControl();
     },
     async sendCommand(command) {

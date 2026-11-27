@@ -1,6 +1,6 @@
 import { INITIAL_ROUND, simulationBallot, tally, validBallot } from './ballots.js';
 import { createJournal, randomId, rememberRoom, withBrowserLock } from './journal.js';
-import { COMMAND_LIFETIME, validCommand, validStation } from './presenter-control.js';
+import { COMMAND_LIFETIME, readStation, validCommand } from './presenter-control.js';
 
 const firebaseConfig = import.meta.env?.VITE_FIREBASE_CONFIG?.trim();
 const useEmulators = import.meta.env?.DEV && import.meta.env?.VITE_FIREBASE_EMULATORS === '1';
@@ -48,8 +48,10 @@ export function createSync({ role = 'voter' } = {}) {
       control.send({ type: 'station', station });
     } else if (presenter && message.type === 'command' && message.expiresAt > Date.now()) {
       dispatch(message.command);
-    } else if (clicker && message.type === 'station' && validStation(message.station)) {
-      localStation = message.station;
+    } else if (clicker && message.type === 'station') {
+      const next = readStation(message.station);
+      if (!next) return;
+      localStation = next;
       localSeenAt = performance.now();
       publish();
     }
@@ -72,6 +74,7 @@ export function createSync({ role = 'voter' } = {}) {
   }
 
   function currentRound(refresh = false) {
+    if (remote && !presenter) return source.round ?? INITIAL_ROUND;
     const read = refresh ? journal.refresh : journal.read;
     return read('pending-reset') ?? read('round') ?? INITIAL_ROUND;
   }
@@ -106,16 +109,20 @@ export function createSync({ role = 'voter' } = {}) {
   }
 
   function flushReset() {
-    const next = journal.refresh('pending-reset');
-    if (!next || resetInFlight || !transport || source.status !== 'ready') return;
-    resetFailed = false;
-    resetInFlight = transport.reset(next).then(() => {
-      if (journal.refresh('pending-reset') === next) journal.write('pending-reset', null);
+    if (resetInFlight || !transport || source.status !== 'ready' || !journal.refresh('pending-reset')) return;
+    let attemptedRound;
+    resetInFlight = withBrowserLock(`comm1010:reset:${namespace}`, async () => {
+      if (source.status !== 'ready') return;
+      attemptedRound = journal.refresh('pending-reset');
+      if (!attemptedRound) return;
+      resetFailed = false;
+      await transport.reset(attemptedRound);
+      if (journal.refresh('pending-reset') === attemptedRound) journal.write('pending-reset', null);
     }).catch(() => {
       resetFailed = true;
     }).finally(() => {
       resetInFlight = undefined;
-      if (journal.refresh('pending-reset') !== next) flushReset();
+      if (attemptedRound && journal.refresh('pending-reset') !== attemptedRound) flushReset();
       publish();
     });
   }
@@ -123,8 +130,8 @@ export function createSync({ role = 'voter' } = {}) {
   function receive(update) {
     const wasReady = source.status === 'ready';
     source = update;
-    if (update.round && !clicker) {
-      if (presenter && update.ballots !== null) journal.write(`remote-board:${update.round}`, update.ballots);
+    if (update.round && presenter) {
+      if (update.ballots !== null) journal.write(`remote-board:${update.round}`, update.ballots);
       journal.write('round', update.round);
     }
     if (!wasReady && update.status === 'ready') flushReset();
@@ -159,8 +166,10 @@ export function createSync({ role = 'voter' } = {}) {
       return () => subscribers.delete(listener);
     },
     setStation(next) {
-      if (!presenter || !validStation(next)) return;
-      station = next;
+      if (!presenter) return;
+      const current = readStation(next);
+      if (!current) return;
+      station = current;
       control.send({ type: 'station', station });
       transport?.setStation(station);
     },

@@ -4,8 +4,8 @@ Own the visual treatment, type, palette, motion, imagery and narrative of the CO
 
 ## Presenter stage
 
-- `#stage-hud` contains the station indicator, voting and remote connection states, and the presenter pairing link. `#emergency-controls` holds fullscreen, simulation, and reset.
-- `#stage-viewport` provides perspective. `#stage-world` contains `#station-1` through `#station-5`, each marked with `data-station`. Style station interiors, leaving the world and station transforms under camera control. The active station has `data-active`. The other stations use `inert`.
+- `#presenter-lobby` holds the Start button, clicker QR and connection states. `#emergency-controls` holds the pairing link, station navigation, simulation, reset and animation controls. Preserve the paired clicker QR's white margin.
+- `#stage-viewport` fills the viewport and provides perspective. `#stage-world` contains `#station-1` through `#station-15`, each marked with `data-station`. Style station interiors, leaving the world and station transforms under camera control. The active station has `data-active`. The other stations use `inert`.
 - `#flynn-effect` holds the cognitive metric. `#memory-experiment[data-state]` switches between `baseline` and `decayed`. Add `data-memory-card` to each example item and `data-decays` to the items hidden by the simulation.
 - `#lifespan-hours` and `#lifespan-result` form the attention calculator. `#friction-protocol[data-state]` switches between `default` and `shielded`.
 - `#action-hub[data-goal]` switches between `pending` and `achieved`. `#action-instructions` holds the QR and voting link. `#action-telemetry` holds the tally, goal progress, and action breakdown. Preserve the QR's full white margin and the plain voting link.

@@ -1,29 +1,40 @@
 import { ACTIONS, ACTION_NAMES, GOAL, SIMULATION_STEPS, SIMULATION_TARGET } from './ballots.js';
-import { drawVoteQr } from './qr.js';
+import jackCouchSvg from './assets/jack-couch.svg?raw';
+import { createPresenterMode } from './presenter-mode.js';
+import { drawQr } from './qr.js';
 import { createSpatialCamera } from './spatial-camera.js';
 import { createSync } from './sync.js';
 
 const get = (id) => document.getElementById(id);
+const jackScene = get('jack-couch-scene');
+if (jackScene) jackScene.innerHTML = jackCouchSvg;
 const viewport = get('stage-viewport');
-const fullscreen = get('stage-fullscreen');
+const start = get('start-presentation');
+const previous = get('stage-prev');
+const next = get('stage-next');
+const pauseAnimation = get('pause-opening-animation');
 const simulate = get('board-simulate');
 const reset = get('board-reset');
 const shortcuts = get('single-key-shortcuts');
-const status = get('presenter-status');
 const board = createSync({ role: 'presenter' });
 const camera = createSpatialCamera(viewport, (station) => {
-  text('station-position', `Station ${station.index} / 5`);
+  text('station-position', `Station ${station.index} / ${station.total}`);
+  previous.disabled = station.index === 1;
+  next.disabled = station.index === station.total;
   board.setStation(station);
+});
+const presentation = createPresenterMode({
+  lobby: get('presenter-lobby'),
+  stage: viewport,
+  start,
+  focusStation: camera.focus,
+  onFullscreenUnavailable: () => announceStatus('Browser fullscreen is unavailable.'),
 });
 let simulation;
 
-async function toggleFullscreen() {
-  try {
-    if (document.fullscreenElement) await document.exitFullscreen();
-    else await document.documentElement.requestFullscreen();
-  } catch {
-    status.textContent = 'Fullscreen is unavailable in this browser.';
-  }
+function announceStatus(message) {
+  text('presenter-status', message);
+  text('stage-status', message);
 }
 
 function stopSimulation() {
@@ -39,27 +50,27 @@ function startSimulation() {
   if (simulation) return;
   const { round, points } = board.snapshot();
   if (points >= SIMULATION_TARGET) {
-    status.textContent = 'The board already has at least 31 points.';
+    announceStatus(`The board already has at least ${SIMULATION_TARGET} points.`);
     return;
   }
 
   const run = { round, index: 0, timer: undefined };
   simulation = run;
-  if (document.activeElement === simulate) camera.focus();
+  if (document.activeElement === simulate) get('emergency-controls').querySelector('summary').focus();
   simulate.disabled = true;
-  status.textContent = 'Simulating audience votes.';
+  announceStatus('Simulating audience votes.');
 
   function tick() {
     if (simulation !== run) return;
     const current = board.snapshot();
     if (current.round !== run.round) {
       stopSimulation();
-      status.textContent = 'Simulation stopped for the new round.';
+      announceStatus('Simulation stopped for the new round.');
       return;
     }
     if (run.index === SIMULATION_STEPS || current.points >= SIMULATION_TARGET) {
       stopSimulation();
-      status.textContent = 'Simulation complete.';
+      announceStatus('Simulation complete.');
       return;
     }
     board.addSimulation(run.round, run.index);
@@ -75,7 +86,7 @@ function startSimulation() {
 function resetBoard() {
   stopSimulation();
   board.reset();
-  status.textContent = 'Voting board cleared.';
+  announceStatus('Voting board cleared.');
 }
 
 function text(id, value) {
@@ -93,10 +104,11 @@ const connectionMessages = {
   error: 'Live voting is unavailable. Simulation is available.',
 };
 
+get('board-progress').max = GOAL;
 board.subscribe((state) => {
   if (simulation && simulation.round !== state.round) {
     stopSimulation();
-    status.textContent = 'Simulation stopped for the new round.';
+    announceStatus('Simulation stopped for the new round.');
   }
 
   const goalAchieved = state.points >= GOAL;
@@ -138,7 +150,7 @@ const voteUrl = new URL('./vote.html', location.href);
 if (board.room) voteUrl.searchParams.set('room', board.room);
 get('vote-link').href = voteUrl.href;
 try {
-  drawVoteQr(get('vote-qr'), voteUrl);
+  drawQr(get('vote-qr'), voteUrl);
 } catch {
   get('qr-status').textContent = 'QR code unavailable. Use the voting link.';
 }
@@ -147,63 +159,84 @@ const clickerUrl = new URL('./clicker.html', location.href);
 clickerUrl.searchParams.set('room', board.room);
 clickerUrl.hash = new URLSearchParams({ control: board.controlKey }).toString();
 get('clicker-link').href = clickerUrl.href;
+try {
+  drawQr(get('clicker-qr'), clickerUrl, 3);
+} catch {
+  text('clicker-qr-label', 'Use the pairing link in Presenter tools.');
+}
 get('copy-clicker-link').disabled = false;
 get('copy-clicker-link').addEventListener('click', async () => {
   try {
     await navigator.clipboard.writeText(clickerUrl.href);
-    status.textContent = 'Clicker link copied.';
+    announceStatus('Clicker link copied.');
   } catch {
-    status.textContent = 'Use the presenter clicker link to open or copy the address.';
+    announceStatus('Use the presenter clicker link to open or copy the address.');
   }
 });
 
 board.onCommand((command) => {
   switch (command) {
     case 'prev': camera.prev(); break;
-    case 'next': camera.next(); break;
+    case 'next':
+      if (!presentation.isPresenting()) presentation.enter();
+      else camera.next();
+      break;
     case 'simulate': startSimulation(); break;
     case 'reset': resetBoard(); break;
   }
 });
 
-fullscreen.addEventListener('click', toggleFullscreen);
+previous.addEventListener('click', camera.prev);
+next.addEventListener('click', camera.next);
+start.addEventListener('click', () => presentation.enter({ fullscreen: true }));
+get('exit-presentation').addEventListener('click', presentation.leave);
+if (jackScene) {
+  pauseAnimation.disabled = false;
+  pauseAnimation.addEventListener('click', () => {
+    const paused = jackScene.toggleAttribute('data-paused');
+    pauseAnimation.setAttribute('aria-pressed', String(paused));
+  });
+}
 simulate.addEventListener('click', startSimulation);
 reset.addEventListener('click', resetBoard);
 shortcuts.addEventListener('change', () => {
-  for (const [control, key] of [[fullscreen, 'F'], [simulate, 'S'], [reset, 'R']]) {
+  for (const [control, key] of [[simulate, 'S'], [reset, 'R']]) {
     if (shortcuts.checked) control.setAttribute('aria-keyshortcuts', key);
     else control.removeAttribute('aria-keyshortcuts');
   }
 });
-document.addEventListener('fullscreenchange', () => {
-  fullscreen.setAttribute('aria-pressed', String(Boolean(document.fullscreenElement)));
-});
-
 const interactive = 'a, button, input, select, textarea, summary, [contenteditable]';
 document.addEventListener('keydown', (event) => {
   if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.isComposing) return;
+  const presenting = presentation.isPresenting();
+  if (event.key === 'Escape' && presenting) {
+    event.preventDefault();
+    presentation.leave();
+    return;
+  }
   const target = event.target instanceof Element ? event.target : null;
   if (target?.closest('input, select, textarea, [contenteditable]')) return;
+  if (event.key === ' ' && target?.closest(interactive)) return;
 
-  switch (event.code) {
-    case 'ArrowLeft':
+  switch (event.key.toLowerCase()) {
+    case 'arrowleft':
+      if (!presenting) break;
       event.preventDefault();
       camera.prev();
       break;
-    case 'Space':
-      if (target?.closest(interactive)) break;
-      // Space and Right Arrow both advance.
-    case 'ArrowRight':
+    case ' ':
+    case 'arrowright':
+      if (!presenting) break;
       event.preventDefault();
       camera.next();
       break;
-    case 'KeyF':
-      if (shortcuts.checked && !event.repeat) void toggleFullscreen();
+    case 'f':
+      if (presenting && shortcuts.checked && !event.repeat) void presentation.toggleFullscreen();
       break;
-    case 'KeyS':
+    case 's':
       if (shortcuts.checked && !event.repeat) startSimulation();
       break;
-    case 'KeyR':
+    case 'r':
       if (shortcuts.checked && !event.repeat) resetBoard();
       break;
   }
@@ -242,6 +275,7 @@ frictionButton.addEventListener('click', () => {
   text('friction-state', shielded ? 'Biometric Shield active' : 'Default OS');
 });
 
-for (const control of [fullscreen, simulate, reset, memoryButton, lifespan, frictionButton]) {
+for (const control of [start, simulate, reset, memoryButton, lifespan, frictionButton]) {
   control.disabled = false;
 }
+if (camera.hasStationLink) presentation.enter();

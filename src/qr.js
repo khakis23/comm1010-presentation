@@ -1,12 +1,11 @@
 import qrcode from 'qrcode-generator';
 
-export function drawVoteQr(canvas, url) {
+export function drawQr(canvas, url, pixelSize = 6) {
   const qr = qrcode(0, 'M');
   qr.addData(url.href);
   qr.make();
 
   const margin = 4;
-  const pixelSize = 6;
   const modules = qr.getModuleCount();
   const size = (modules + margin * 2) * pixelSize;
   const context = canvas.getContext('2d');
